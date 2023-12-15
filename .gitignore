@@ -1,0 +1,5 @@
+# ignore .vscode folder
+.vscode
+
+# ignore playground folder
+playground
