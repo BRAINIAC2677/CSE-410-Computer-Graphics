@@ -3,3 +3,6 @@
 
 # ignore playground folder
 playground
+
+# ignore obj folder inside any nested folder
+**/obj
