@@ -104,21 +104,43 @@ GGvector GGvector::operator^(const GGvector &p) const
     return GGvector(y * p.z - z * p.y, z * p.x - x * p.z, x * p.y - y * p.x);
 }
 
-void ggDrawAxes()
+void ggDrawAxes(GLint _axis_length)
 {
+    glLineWidth(5);
     glBegin(GL_LINES);
     {
         glColor3f(1.0f, 0.0f, 0.0f);
-        glVertex3f(100, 0, 0);
-        glVertex3f(-100, 0, 0);
+        glVertex3f(_axis_length / 2, 0, 0);
+        glVertex3f(-_axis_length / 2, 0, 0);
 
         glColor3f(0.0f, 1.0f, 0.0f);
-        glVertex3f(0, -100, 0);
-        glVertex3f(0, 100, 0);
+        glVertex3f(0, _axis_length / 2, 0);
+        glVertex3f(0, -_axis_length / 2, 0);
 
         glColor3f(0.0f, 0.0f, 1.0f);
-        glVertex3f(0, 0, 100);
-        glVertex3f(0, 0, -100);
+        glVertex3f(0, 0, _axis_length / 2);
+        glVertex3f(0, 0, -_axis_length / 2);
+    }
+    glEnd();
+    glLineWidth(1);
+}
+
+void ggDrawGridPlane(GLint _grid_length, GLint _grid_count)
+{
+    GLint start_x = -_grid_length * _grid_count / 2;
+    GLint start_y = -_grid_length * _grid_count / 2;
+
+    glBegin(GL_LINES);
+    {
+        glColor3f(1.0f, 1.0f, 1.0f);
+        for (GLint i = 0; i <= _grid_count; i++)
+        {
+            glVertex3f(start_x + i * _grid_length, start_y, 0);
+            glVertex3f(start_x + i * _grid_length, -start_y, 0);
+
+            glVertex3f(start_x, start_y + i * _grid_length, 0);
+            glVertex3f(-start_x, start_y + i * _grid_length, 0);
+        }
     }
     glEnd();
 }
@@ -148,6 +170,78 @@ void ggDrawCheckerBoard(GLint _tile_count, GLint _tile_size)
                 glVertex3f(start_x + (i + 1) * _tile_size, start_y + (j + 1) * _tile_size, 0);
                 glVertex3f(start_x + i * _tile_size, start_y + (j + 1) * _tile_size, 0);
             }
+        }
+    }
+    glEnd();
+}
+
+void ggDrawUnitTriangle()
+{
+    glBegin(GL_TRIANGLES);
+    {
+        glVertex3f(1, 0, 0);
+        glVertex3f(0, 1, 0);
+        glVertex3f(0, 0, 1);
+    }
+    glEnd();
+}
+
+void ggDrawSphereFace(GLdouble _radius, GLint _divisions)
+{
+    vector<vector<GGvector>> vertices(_divisions + 1, vector<GGvector>(_divisions + 1));
+
+    for (GLsizei i = 0; i <= _divisions; ++i)
+    {
+        GLdouble latitude_angle = M_PI / 4 - i * M_PI / 2 / _divisions;
+        GGvector n2 = GGvector(-sin(latitude_angle), cos(latitude_angle), 0);
+        for (GLsizei j = 0; j <= _divisions; ++j)
+        {
+            GLdouble longitude_angle = -M_PI / 4 + j * M_PI / 2 / _divisions;
+            GGvector n1 = GGvector(-sin(longitude_angle), 0, -cos(longitude_angle));
+            GGvector v = n1 ^ n2;
+            vertices[i][j] = v.normalize();
+            vertices[i][j] = vertices[i][j] * _radius;
+        }
+    }
+
+    for (GLsizei i = 0; i < _divisions; ++i)
+    {
+        for (GLsizei j = 0; j < _divisions; ++j)
+        {
+            glBegin(GL_QUADS);
+            {
+                glVertex3f(vertices[i][j].x, vertices[i][j].y, vertices[i][j].z);
+                glVertex3f(vertices[i][j + 1].x, vertices[i][j + 1].y, vertices[i][j + 1].z);
+                glVertex3f(vertices[i + 1][j + 1].x, vertices[i + 1][j + 1].y, vertices[i + 1][j + 1].z);
+                glVertex3f(vertices[i + 1][j].x, vertices[i + 1][j].y, vertices[i + 1][j].z);
+            }
+            glEnd();
+        }
+    }
+}
+
+void ggDrawCylinderSegment(GLdouble _radius, GLdouble _height, GLint _divisions)
+{
+    vector<GGvector> base_vertices;
+    vector<GGvector> top_vertices;
+
+    GLdouble delta_angle = ggDeg2Rad(70.5287794) / _divisions;
+    GLdouble start_angle = -(delta_angle * _divisions) / 2;
+    for (int i = 0; i < _divisions + 1; i++)
+    {
+        GLdouble angle = start_angle + i * delta_angle;
+        base_vertices.push_back(GGvector(_radius * cos(angle), _radius * sin(angle), 0));
+        top_vertices.push_back(GGvector(_radius * cos(angle), _radius * sin(angle), _height));
+    }
+
+    glBegin(GL_QUADS);
+    {
+        for (int i = 0; i < _divisions; i++)
+        {
+            glVertex3f(base_vertices[i].x, base_vertices[i].y, base_vertices[i].z);
+            glVertex3f(base_vertices[i + 1].x, base_vertices[i + 1].y, base_vertices[i + 1].z);
+            glVertex3f(top_vertices[i + 1].x, top_vertices[i + 1].y, top_vertices[i + 1].z);
+            glVertex3f(top_vertices[i].x, top_vertices[i].y, top_vertices[i].z);
         }
     }
     glEnd();

@@ -43,8 +43,12 @@ public:
     GGvector operator^(const GGvector &p) const;
 };
 
-void ggDrawAxes();
+void ggDrawAxes(GLint _axis_length);
+void ggDrawGridPlane(GLint _grid_length, GLint _grid_count);
 void ggDrawCheckerBoard(GLint _tile_count, GLint _tile_size);
+void ggDrawUnitTriangle();
+void ggDrawSphereFace(GLdouble _radius, GLint _divisions);
+void ggDrawCylinderSegment(GLdouble _radius, GLdouble _height, GLint _divisions);
 GLdouble ggDeg2Rad(GLdouble _deg);
 
 class GGsphere
