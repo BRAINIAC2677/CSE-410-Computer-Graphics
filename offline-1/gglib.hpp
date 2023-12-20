@@ -46,6 +46,7 @@ public:
 void ggDrawAxes(GLint _axis_length);
 void ggDrawGridPlane(GLint _grid_length, GLint _grid_count);
 void ggDrawCheckerBoard(GLint _tile_count, GLint _tile_size);
+void ggDrawSquareWall(GLint _wall_length, GLint _wall_height);
 void ggDrawUnitTriangle();
 void ggDrawSphereFace(GLdouble _radius, GLint _divisions);
 void ggDrawCylinderSegment(GLdouble _radius, GLdouble _height, GLint _divisions);
@@ -66,6 +67,7 @@ public:
     GLdouble radius, delta_rolling_angle;
     GLint sectors, stacks;
     vector<GGvector> colors;
+    GLint wall_length;
 
     GGsphere();
     GGsphere(GGvector _center, GLdouble _radius, GLint _sectors, GLint _stacks);
@@ -73,6 +75,8 @@ public:
     void roll_forward();
     void roll_backward();
     void change_forward_direction(GLdouble _angle);
+    vector<GGvector> get_farthest_surface_point();
+    void deflect_after_wall_collision();
 };
 
 #endif

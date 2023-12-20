@@ -175,6 +175,37 @@ void ggDrawCheckerBoard(GLint _tile_count, GLint _tile_size)
     glEnd();
 }
 
+void ggDrawSquareWall(GLint _wall_length, GLint _wall_height)
+{
+    GLint start_x = -_wall_length / 2;
+    GLint start_y = -_wall_length / 2;
+
+    glBegin(GL_QUADS);
+    {
+        glColor3f(1.0f, 0.0f, 0.0f);
+        glVertex3f(start_x, start_y, 0);
+        glVertex3f(start_x + _wall_length, start_y, 0);
+        glVertex3f(start_x + _wall_length, start_y, _wall_height);
+        glVertex3f(start_x, start_y, _wall_height);
+
+        glVertex3f(start_x + _wall_length, start_y, 0);
+        glVertex3f(start_x + _wall_length, start_y + _wall_length, 0);
+        glVertex3f(start_x + _wall_length, start_y + _wall_length, _wall_height);
+        glVertex3f(start_x + _wall_length, start_y, _wall_height);
+
+        glVertex3f(start_x + _wall_length, start_y + _wall_length, 0);
+        glVertex3f(start_x, start_y + _wall_length, 0);
+        glVertex3f(start_x, start_y + _wall_length, _wall_height);
+        glVertex3f(start_x + _wall_length, start_y + _wall_length, _wall_height);
+
+        glVertex3f(start_x, start_y + _wall_length, 0);
+        glVertex3f(start_x, start_y, 0);
+        glVertex3f(start_x, start_y, _wall_height);
+        glVertex3f(start_x, start_y + _wall_length, _wall_height);
+    }
+    glEnd();
+}
+
 void ggDrawUnitTriangle()
 {
     glBegin(GL_TRIANGLES);
@@ -347,10 +378,11 @@ GGsphere::GGsphere()
     this->up = GGvector(0, 0, 1);
     this->forward = GGvector(0, 1, 0);
     this->radius = 1;
-    this->delta_rolling_angle = 10;
+    this->delta_rolling_angle = 30;
     this->sectors = 20;
     this->stacks = 20;
     this->colors = {{1, 0, 0}, {0, 1, 0}};
+    this->wall_length = -1;
     this->__generate_vertices();
 }
 
@@ -360,10 +392,11 @@ GGsphere::GGsphere(GGvector _center, GLdouble _radius, GLint _sectors, GLint _st
     this->up = GGvector(0, 0, 1);
     this->forward = GGvector(0, 1, 0);
     this->radius = _radius;
-    this->delta_rolling_angle = 10;
+    this->delta_rolling_angle = 30;
     this->sectors = _sectors;
     this->stacks = _stacks;
     this->colors = {{1, 0, 0}, {0, 1, 0}};
+    this->wall_length = -1;
     this->__generate_vertices();
 }
 
@@ -428,8 +461,14 @@ void GGsphere::change_forward_direction(GLdouble _angle)
 
 void GGsphere::roll_forward()
 {
-    GLdouble delta_position_mag = (this->delta_rolling_angle / 360.0) * 2 * M_PI * this->radius;
-    this->position = this->position + this->forward.normalize() * delta_position_mag;
+
+    GLdouble small_angle = 0.1;
+    for (GLdouble angle = 0; angle < this->delta_rolling_angle; angle += small_angle)
+    {
+        GLdouble delta_position_mag = (small_angle / 360.0) * 2 * M_PI * this->radius;
+        this->position = this->position + this->forward.normalize() * delta_position_mag;
+        this->deflect_after_wall_collision();
+    }
 
     this->total_rolling_angle -= this->delta_rolling_angle;
     this->total_rolling_angle = fmod(this->total_rolling_angle, 360);
@@ -437,9 +476,69 @@ void GGsphere::roll_forward()
 
 void GGsphere::roll_backward()
 {
-    GLdouble delta_position_mag = (this->delta_rolling_angle / 360.0) * 2 * M_PI * this->radius;
-    this->position = this->position - this->forward.normalize() * delta_position_mag;
+    GLdouble small_angle = 0.1;
+    for (GLdouble angle = 0; angle < this->delta_rolling_angle; angle += small_angle)
+    {
+        GLdouble delta_position_mag = (small_angle / 360.0) * 2 * M_PI * this->radius;
+        this->position = this->position - this->forward.normalize() * delta_position_mag;
+        this->deflect_after_wall_collision();
+    }
 
     this->total_rolling_angle += this->delta_rolling_angle;
     this->total_rolling_angle = fmod(this->total_rolling_angle, 360);
+
+    this->deflect_after_wall_collision();
+}
+
+vector<GGvector> GGsphere::get_farthest_surface_point()
+{
+    GGvector farthest_point = this->position + this->forward.normalize() * this->radius;
+    GGvector back_farthest_point = this->position - this->forward.normalize() * this->radius;
+    return {farthest_point, back_farthest_point};
+}
+
+void GGsphere::deflect_after_wall_collision()
+{
+    if (this->wall_length == -1)
+    {
+        return;
+    }
+
+    GGvector farthest_point = this->get_farthest_surface_point()[0];
+    GGvector back_farthest_point = this->get_farthest_surface_point()[1];
+
+    // check for collision with each of the four walls and deflect accordingly
+    if (farthest_point.x >= this->wall_length / 2)
+    {
+        this->forward.x *= -1;
+    }
+    else if (farthest_point.x <= -this->wall_length / 2)
+    {
+        this->forward.x *= -1;
+    }
+    else if (farthest_point.y >= this->wall_length / 2)
+    {
+        this->forward.y *= -1;
+    }
+    else if (farthest_point.y <= -this->wall_length / 2)
+    {
+        this->forward.y *= -1;
+    }
+
+    if (back_farthest_point.x >= this->wall_length / 2)
+    {
+        this->forward.x *= -1;
+    }
+    else if (back_farthest_point.x <= -this->wall_length / 2)
+    {
+        this->forward.x *= -1;
+    }
+    else if (back_farthest_point.y >= this->wall_length / 2)
+    {
+        this->forward.y *= -1;
+    }
+    else if (back_farthest_point.y <= -this->wall_length / 2)
+    {
+        this->forward.y *= -1;
+    }
 }

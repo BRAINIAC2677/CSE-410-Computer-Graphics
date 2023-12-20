@@ -29,8 +29,12 @@ GGvector GGcamera_position(GG_CAMERA_PARAMETER, GG_CAMERA_PARAMETER, GG_CAMERA_P
 GGvector GGcamera_view(-GG_CAMERA_PARAMETER, -GG_CAMERA_PARAMETER, -GG_CAMERA_PARAMETER);
 GGvector GGcamera_up(0, 0, 1);
 
-GGsphere sphere(GGvector(0, 0, 2), 2, 8, 8);
+GLdouble GG_SPHERE_RADIUS = 2;
+GLdouble GG_WALL_LENGTH = 50, GG_WALL_HEIGHT = 2 * GG_SPHERE_RADIUS;
+GGsphere sphere(GGvector(0, 0, GG_SPHERE_RADIUS), GG_SPHERE_RADIUS, 8, 8);
 GLdouble GG_SPHERE_DIRECTION_ANGLE_CHANGE = 10;
+
+bool GGis_simulation_on = false;
 
 void ggInit()
 {
@@ -42,6 +46,9 @@ void ggInit()
 
     GLdouble aspect = (GLdouble)GGwindow_width / (GLdouble)GGwindow_height;
     gluPerspective(GG_FOVY, aspect, GG_ZNEAR, GG_ZFAR);
+
+    sphere.wall_length = GG_WALL_LENGTH;
+
     glMatrixMode(GL_MODELVIEW);
 }
 
@@ -78,6 +85,7 @@ void ggDisplay()
     glColor3f(1.0f, 0.0f, 0.0f);
     glPushMatrix();
     {
+        ggDrawSquareWall(GG_WALL_LENGTH, GG_WALL_HEIGHT);
         sphere.draw();
     }
     glPopMatrix();
@@ -133,6 +141,15 @@ void ggKeyboardListener(unsigned char key, int x, int y)
         // roll backward
         sphere.roll_backward();
         break;
+
+    // spacebar to toggle simulation
+    case ' ':
+        GGis_simulation_on = !GGis_simulation_on;
+        break;
+
+    case 'q':
+        exit(0);
+        break;
     default:
         break;
     }
@@ -173,6 +190,10 @@ void ggKeyboardSpecialListener(int key, int x, int y)
 
 void ggIdle()
 {
+    if (GGis_simulation_on)
+    {
+        sphere.roll_forward();
+    }
     glutPostRedisplay();
 }
 
