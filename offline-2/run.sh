@@ -45,16 +45,18 @@ scene_parser_obj="scene_parser"
 main="main.cpp"
 main_obj="main"
 
-cp $scene_parser libggutil.hpp libgg.hpp libggutil.cpp libgg.cpp $output_dir/
+cp $scene_parser $scene libggutil.hpp libgg.hpp libggutil.cpp libgg.cpp $output_dir/
 cd $output_dir
+
+scene=${scene##*/}
 
 # running the scene parser
 g++ -o $scene_parser_obj $scene_parser
-$scene_parser_obj $scene $main
+./$scene_parser_obj $scene $main
 
 # running the scene source code
 g++ -o $main_obj $main libggutil.cpp libgg.cpp
-.$main_obj
+./$main_obj
 
 # cleaning up
 # rm $scene_parser_obj $main_obj

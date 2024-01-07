@@ -189,11 +189,30 @@ Point Point::transform(SquareMatrix _m)
   return Point(result.values[0][0], result.values[1][0], result.values[2][0]);
 }
 
+Point Point::project(SquareMatrix _m)
+{
+  assert(_m.get_ndim() == 4);
+  Matrix temp(4, 1);
+  temp.values[0][0] = x;
+  temp.values[1][0] = y;
+  temp.values[2][0] = z;
+  temp.values[3][0] = 1.0;
+  Matrix result = _m.matmul(temp);
+  return Point(result.values[0][0]/result.values[3][0], result.values[1][0]/result.values[3][0], result.values[2][0]/result.values[3][0]);
+}
+
+Vector Point::operator-(Point _p)
+{
+  return Vector(x - _p.x, y - _p.y, z - _p.z);
+}
+
 ostream& operator<<(ostream& _os, const Point& _p)
 {
   _os << "(" << _p.x << ", " << _p.y << ", " << _p.z << ")";
   return _os;
 }
+
+Vector::Vector(Point _p): x(_p.x), y(_p.y), z(_p.z) {}
 
 Vector::Vector(float _x, float _y, float _z): x(_x), y(_y), z(_z) {}
 
@@ -210,6 +229,16 @@ void Vector::normalize()
   z /= norm;
 }
 
+Vector Vector::cross(Vector _v)
+{
+  return Vector(y*_v.z - z*_v.y, z*_v.x - x*_v.z, x*_v.y - y*_v.x);
+}
+
+float Vector::dot(Vector _v)
+{
+  return x*_v.x + y*_v.y + z*_v.z;
+}
+
 ostream& operator<<(ostream& _os, const Vector& _v)
 {
   _os << "<" << _v.x << ", " << _v.y << ", " << _v.z << ">";
@@ -221,6 +250,11 @@ Triangle::Triangle(Point _p1, Point _p2, Point _p3): p1(_p1), p2(_p2), p3(_p3) {
 Triangle Triangle::transform(SquareMatrix _m)
 {
   return Triangle(p1.transform(_m), p2.transform(_m), p3.transform(_m));
+}
+
+Triangle Triangle::project(SquareMatrix _m)
+{
+  return Triangle(p1.project(_m), p2.project(_m), p3.project(_m));
 }
 
 ostream& operator<<(ostream& _os, const Triangle& _t)
