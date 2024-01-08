@@ -2,6 +2,7 @@
 #include<cassert>
 #include<iostream>
 #include<iomanip>
+#include<initializer_list>
 using namespace std;
 
 #include "libggutil.hpp"
@@ -46,6 +47,20 @@ Matrix Matrix::matmul(Matrix _m)
       {
         result.values[i][j] += values[i][k] * _m.values[k][j];
       }
+    }
+  }
+  return result;
+}
+
+Matrix Matrix::operator-(Matrix _m)
+{
+  assert(nrow == _m.get_nrow() && ncol == _m.get_ncol());
+  Matrix result(nrow, ncol, 0.0);
+  for (int i = 0; i < nrow; i++)
+  {
+    for (int j = 0; j < ncol; j++)
+    {
+      result.values[i][j] = values[i][j] - _m.values[i][j];
     }
   }
   return result;
@@ -180,13 +195,9 @@ Point::Point(float _x, float _y, float _z): x(_x), y(_y), z(_z) {}
 Point Point::transform(SquareMatrix _m)
 {
   assert(_m.get_ndim() == 4);
-  Matrix temp(4, 1);
-  temp.values[0][0] = x;
-  temp.values[1][0] = y;
-  temp.values[2][0] = z;
-  temp.values[3][0] = 1.0;
-  Matrix result = _m.matmul(temp);
-  return Point(result.values[0][0], result.values[1][0], result.values[2][0]);
+  Vector4d temp = homogenize();
+  Vector4d result = Vector4d(_m.matmul(temp));
+  return result.dehomogenize();  
 }
 
 Point Point::project(SquareMatrix _m)
@@ -201,9 +212,9 @@ Point Point::project(SquareMatrix _m)
   return Point(result.values[0][0]/result.values[3][0], result.values[1][0]/result.values[3][0], result.values[2][0]/result.values[3][0]);
 }
 
-Vector Point::operator-(Point _p)
+Vector4d Point::homogenize()
 {
-  return Vector(x - _p.x, y - _p.y, z - _p.z);
+  return Vector4d(x, y, z, 1.0);
 }
 
 ostream& operator<<(ostream& _os, const Point& _p)
@@ -212,37 +223,122 @@ ostream& operator<<(ostream& _os, const Point& _p)
   return _os;
 }
 
-Vector::Vector(Point _p): x(_p.x), y(_p.y), z(_p.z) {}
+Vector::Vector(int _ndim): Matrix(_ndim, 1), ndim(_ndim) {}
 
-Vector::Vector(float _x, float _y, float _z): x(_x), y(_y), z(_z) {}
+Vector::Vector(Matrix _m): Matrix(_m), ndim(_m.get_nrow())
+{
+  assert(_m.get_ncol() == 1);
+}
+
+Vector::Vector(initializer_list<float> _l): Matrix(_l.size(), 1), ndim(_l.size())
+{
+  int i = 0;
+  for (auto it = _l.begin(); it != _l.end(); it++)
+  {
+    values[i][0] = *it;
+    i++;
+  }
+}
+
+int Vector::get_ndim() const
+{
+  return ndim;
+}
 
 float Vector::magnitude()
 {
-  return sqrt(x*x + y*y + z*z);
+  float result = 0.0;
+  for (int i = 0; i < ndim; i++)
+  {
+    result += values[i][0] * values[i][0];
+  }
+  return sqrt(result);
 }
 
 void Vector::normalize()
 {
-  float norm = magnitude();
-  x /= norm;
-  y /= norm;
-  z /= norm;
-}
-
-Vector Vector::cross(Vector _v)
-{
-  return Vector(y*_v.z - z*_v.y, z*_v.x - x*_v.z, x*_v.y - y*_v.x);
+  float mag = magnitude();
+  for (int i = 0; i < ndim; i++)
+  {
+    values[i][0] /= mag;
+  }
 }
 
 float Vector::dot(Vector _v)
 {
-  return x*_v.x + y*_v.y + z*_v.z;
+  assert(ndim == _v.get_ndim());
+  float result = 0.0;
+  for (int i = 0; i < ndim; i++)
+  {
+    result += values[i][0] * _v.values[i][0];
+  }
+  return result;
 }
 
-ostream& operator<<(ostream& _os, const Vector& _v)
+Vector3d::Vector3d(Point _p): Vector({_p.x, _p.y, _p.z}) {}
+
+Vector3d::Vector3d(Matrix _m): Vector(_m) {
+  assert(_m.get_nrow() == 3);
+}
+
+Vector3d::Vector3d(float _x, float _y, float _z): Vector({_x, _y, _z}) {}
+
+float Vector3d::x() const
 {
-  _os << "<" << _v.x << ", " << _v.y << ", " << _v.z << ">";
-  return _os;
+  return values[0][0];
+}
+
+float Vector3d::y() const
+{
+  return values[1][0];
+}
+
+float Vector3d::z() const
+{
+  return values[2][0];
+}
+
+Vector3d Vector3d::operator-(Vector3d _v)
+{
+  return Vector3d(Matrix::operator-(_v));
+}
+
+Vector3d Vector3d::cross(Vector3d _v)
+{
+  return Vector3d(values[1][0]*_v.values[2][0] - values[2][0]*_v.values[1][0], values[2][0]*_v.values[0][0] - values[0][0]*_v.values[2][0], values[0][0]*_v.values[1][0] - values[1][0]*_v.values[0][0]);
+}
+
+Vector4d::Vector4d(Point _p): Vector({_p.x, _p.y, _p.z, 1.0}) {}
+
+Vector4d::Vector4d(Matrix _m): Vector(_m) {
+  assert(_m.get_nrow() == 4);
+}
+
+Vector4d::Vector4d(float _x, float _y, float _z, float _w): Vector({_x, _y, _z, _w}) {}
+
+float Vector4d::x() const
+{
+  return values[0][0];
+}
+
+float Vector4d::y() const
+{
+  return values[1][0];
+}
+
+float Vector4d::z() const
+{
+  return values[2][0];
+}
+
+float Vector4d::w() const
+{
+  return values[3][0];
+}
+
+Point Vector4d::dehomogenize()
+{
+  return Point(values[0][0]/values[3][0], values[1][0]/values[3][0], values[2][0]/values[3][0]);
 }
 
 Triangle::Triangle(Point _p1, Point _p2, Point _p3): p1(_p1), p2(_p2), p3(_p3) {}
@@ -321,23 +417,23 @@ SquareMatrix get_rotation_matrix_z(float _angle)
   return result;
 }
 
-SquareMatrix get_alignment_matrix_z(Vector _v)
+SquareMatrix get_alignment_matrix_z(Vector3d _v)
 {
   SquareMatrix result(4);
   result.set_identity();
-  float lambda = sqrt(_v.y*_v.y + _v.z*_v.z);
+  float lambda = sqrt(_v.y()*_v.y() + _v.z()*_v.z());
   result.values[0][0] = lambda / _v.magnitude();
-  result.values[0][1] = -_v.x * _v.y / (_v.magnitude() * lambda);
-  result.values[0][2] = -_v.x * _v.z / (_v.magnitude() * lambda);
-  result.values[1][1] = _v.z / lambda;
-  result.values[1][2] = -_v.y / lambda;
-  result.values[2][0] = _v.x / _v.magnitude();
-  result.values[2][1] = _v.y / _v.magnitude();
-  result.values[2][2] = _v.z / _v.magnitude();
+  result.values[0][1] = -_v.x() * _v.y() / (_v.magnitude() * lambda);
+  result.values[0][2] = -_v.x() * _v.z() / (_v.magnitude() * lambda);
+  result.values[1][1] = _v.z() / lambda;
+  result.values[1][2] = -_v.y() / lambda;
+  result.values[2][0] = _v.x() / _v.magnitude();
+  result.values[2][1] = _v.y() / _v.magnitude();
+  result.values[2][2] = _v.z() / _v.magnitude();
   return result;
 }
 
-SquareMatrix get_rotation_matrix(float _angle, Vector _axis)
+SquareMatrix get_rotation_matrix(float _angle, Vector3d _axis)
 {
   SquareMatrix av = get_alignment_matrix_z(_axis);
   SquareMatrix r = get_rotation_matrix_z(_angle);

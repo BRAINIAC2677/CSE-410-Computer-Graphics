@@ -18,6 +18,7 @@ class Matrix
     int get_ncol() const ;
 
     Matrix matmul(Matrix _m);
+    Matrix operator-(Matrix _m);
     friend ostream& operator<<(ostream& _os, const Matrix& _m);
 };
 
@@ -41,6 +42,8 @@ class SquareMatrix: public Matrix
 };
 
 class Vector;
+class Vector3d;
+class Vector4d;
 
 class Point 
 {
@@ -50,24 +53,53 @@ class Point
     
     Point transform(SquareMatrix _m);
     Point project(SquareMatrix _m);
-    
-    Vector operator-(Point _p);
+    Vector4d homogenize();    
     friend ostream& operator<<(ostream& _os, const Point& _p);
 };
 
-class Vector
+class Vector: public Matrix
 {
+    int ndim; 
   public:
-    float x, y, z;
-    Vector(Point _p);
-    Vector(float _x, float _y, float _z);
-    
+    Vector(int _ndim=4);
+    Vector(Matrix _m);
+    Vector(initializer_list<float> _l);
+
+    int get_ndim() const;
+
     float magnitude();
     void normalize();
-    Vector cross(Vector _v);
     float dot(Vector _v);
+};
 
-    friend ostream& operator<<(ostream& _os, const Vector& _v);
+class Vector3d: public Vector
+{
+  public:
+    Vector3d(Point _p);
+    Vector3d(Matrix _m);
+    Vector3d(float _x, float _y, float _z);
+
+    float x() const;
+    float y() const;
+    float z() const;
+    
+    Vector3d operator-(Vector3d _v);
+    Vector3d cross(Vector3d _v);
+};
+
+class Vector4d: public Vector
+{
+  public:
+    Vector4d(Point _p);
+    Vector4d(Matrix _m);
+    Vector4d(float _x, float _y, float _z, float _w);
+
+    float x() const;
+    float y() const;
+    float z() const;
+    float w() const;
+
+    Point dehomogenize();
 };
 
 class Triangle
@@ -90,7 +122,7 @@ SquareMatrix get_scaling_matrix(float _sx, float _sy, float _sz);
 SquareMatrix get_rotation_matrix_x(float _angle);
 SquareMatrix get_rotation_matrix_y(float _angle);
 SquareMatrix get_rotation_matrix_z(float _angle);
-SquareMatrix get_alignment_matrix_z(Vector _v);
-SquareMatrix get_rotation_matrix(float _angle, Vector _axis);
+SquareMatrix get_alignment_matrix_z(Vector3d _v);
+SquareMatrix get_rotation_matrix(float _angle, Vector3d _axis);
 
 #endif

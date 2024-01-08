@@ -20,7 +20,7 @@ void gen_init(ofstream &_output_file) {
   _output_file << "  ofstream out1(\"stage1.txt\");" << endl;
   _output_file << "  ofstream out2(\"stage2.txt\");" << endl;
   _output_file << "  ofstream out3(\"stage3.txt\");" << endl;
-  _output_file << "  ggInit(1000, 1000);" << endl;
+  _output_file << "  ofstream out4(\"stage4.txt\");" << endl;
 }
 
 void gen_end(ofstream &_output_file) {
@@ -28,6 +28,7 @@ void gen_end(ofstream &_output_file) {
   _output_file << "  ggPrintTriangles(0, out1);" << endl;
   _output_file << "  ggPrintTriangles(1, out2);" << endl;
   _output_file << "  ggPrintTriangles(2, out3);" << endl;
+  _output_file << "  ggPrintTriangles(3, out4);" << endl;
   _output_file << "  return 0;" << endl;
   _output_file << "}" << endl;
 }
@@ -114,32 +115,38 @@ void gen_pop(ofstream &_output_file) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc != 3) {
-    cerr << "Usage: ./scene_parser <input_file_name> <output_file_name>"
+  if (argc != 4) {
+    cerr << "Usage: ./scene_parser <input_scene_file_name> <input_config_file_name> <output_file_name>"
          << endl;
     return 1;
   }
-  string input_file_name = argv[1];
-  string output_file_name = argv[2];
-  ifstream input_file(input_file_name);
+  string input_scene_file_name = argv[1];
+  string input_config_file_name = argv[2];
+  string output_file_name = argv[3];
+  ifstream input_scene_file(input_scene_file_name);
+  ifstream input_config_file(input_config_file_name);
   ofstream output_file(output_file_name);
 
-  gen_init(output_file);
-  gen_camera(input_file, output_file);
-  gen_perspective(input_file, output_file);
-
   string line;
-  while (getline(input_file, line)) {
+  gen_init(output_file);
+  getline(input_config_file, line); 
+  line.erase(line.find_last_not_of(" \n\r\t") + 1);
+  vector<string> tokens = split(line, ' ');
+  output_file << "  ggInit(" << tokens[0] << ", " << tokens[1] << ");" << endl;
+  gen_camera(input_scene_file, output_file);
+  gen_perspective(input_scene_file, output_file);
+
+  while (getline(input_scene_file, line)) {
     line.erase(line.find_last_not_of(" \n\r\t") + 1);
     // todo: parse the first 4 lines
     if (line == "triangle") {
-      gen_triangle(input_file, output_file);
+      gen_triangle(input_scene_file, output_file);
     } else if (line == "translate") {
-      gen_translate(input_file, output_file);
+      gen_translate(input_scene_file, output_file);
     } else if (line == "scale") {
-      gen_scale(input_file, output_file);
+      gen_scale(input_scene_file, output_file);
     } else if (line == "rotate") {
-      gen_rotate(input_file, output_file);
+      gen_rotate(input_scene_file, output_file);
     } else if (line == "push") {
       gen_push(output_file);
     } else if (line == "pop") {

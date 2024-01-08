@@ -6,39 +6,50 @@ using namespace std;
 
 #include "libgg.hpp"
 
-SquareMatrix model_matrix, view_matrix, projection_matrix;
+SquareMatrix model_matrix, view_matrix, projection_matrix, viewport_matrix;
 stack<SquareMatrix> model_matrix_stack;
 vector<vector<Triangle>> triangles;
+
+void initViewportMatrix(float _height, float _width) {
+  viewport_matrix.set_identity();
+  viewport_matrix.values = {
+    {_width / 2, 0, 0, (_width - 1) / 2},
+    {0, _height / 2, 0, (_height - 1) / 2},
+    {0, 0, 1, 0},
+    {0, 0, 0, 1}
+  };
+}
 
 void ggInit(int _height, int _width) {
   model_matrix.set_identity();
   view_matrix.set_identity();
   projection_matrix.set_identity();
+  initViewportMatrix(_height, _width);
   model_matrix_stack = stack<SquareMatrix>();
-  triangles = vector<vector<Triangle>>(3, vector<Triangle>());
+  triangles = vector<vector<Triangle>>(4, vector<Triangle>());
 }
 
 void ggLookAt(float _eye_x, float _eye_y, float _eye_z,
               float _look_x, float _look_y, float _look_z,
               float _up_x, float _up_y, float _up_z) 
 {
-  Point eye = Point(_eye_x, _eye_y, _eye_z);
-  Point look = Point(_look_x, _look_y, _look_z);
-  Vector up = Vector(_up_x, _up_y, _up_z);
+  Vector3d eye = Vector3d(_eye_x, _eye_y, _eye_z);
+  Vector3d look = Vector3d(_look_x, _look_y, _look_z);
+  Vector3d up = Vector3d(_up_x, _up_y, _up_z);
 
-  Vector l = look - eye;
+  Vector3d l = look - eye;
   l.normalize();
-  Vector r = l.cross(up);
+  Vector3d r = l.cross(up);
   r.normalize();
-  Vector u = r.cross(l);
+  Vector3d u = r.cross(l);
 
-  SquareMatrix T = get_translation_matrix(-eye.x, -eye.y, -eye.z);
+  SquareMatrix T = get_translation_matrix(-eye.x(), -eye.y(), -eye.z());
   SquareMatrix R;
   R.set_identity();
   R.values = {
-    {r.x, r.y, r.z, 0},
-    {u.x, u.y, u.z, 0},
-    {-l.x, -l.y, -l.z, 0},
+    {r.x(), r.y(), r.z(), 0},
+    {u.x(), u.y(), u.z(), 0},
+    {-l.x(), -l.y(), -l.z(), 0},
     {0, 0, 0, 1}
   };
   view_matrix = R.matmul(T);
@@ -74,7 +85,7 @@ void ggScale(float _sx, float _sy, float _sz) {
 }
 
 void ggRotate(float _angle, float _x, float _y, float _z) {
-  SquareMatrix R = get_rotation_matrix(_angle,Vector( _x, _y, _z));
+  SquareMatrix R = get_rotation_matrix(_angle,Vector3d( _x, _y, _z));
   model_matrix = model_matrix.matmul(R);
 }
 
@@ -89,7 +100,7 @@ void ggPopMatrix() {
 }
 
 void ggPrintTriangles(int _stage, ostream& _out) {
-  assert(_stage >= 0 && _stage <= 2);
+  assert(_stage >= 0 && _stage <= triangles.size() - 1);
   _out<<"stage "<<_stage+1<<"\n";
   for (Triangle t : triangles[_stage])
   {
@@ -114,7 +125,10 @@ void ggEnd() {
     triangles[1].push_back(t.transform(view_matrix));
   }
   for (auto t : triangles[1]) {
-    triangles[2].push_back(t.project(projection_matrix));
+    triangles[2].push_back(t.transform(projection_matrix));
   }
+  for (auto t : triangles[2]) {
+    triangles[3].push_back(t.transform(viewport_matrix));
+  } 
 }
 

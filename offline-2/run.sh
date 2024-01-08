@@ -1,8 +1,8 @@
 #! /bin/bash
 
 # check if the number of arguments is correct
-if [ $# -lt 1 ]; then
-  echo "Usage: run.sh [-d <output_dir>] scene_file.txt"
+if [ $# -lt 2 ]; then
+  echo "Usage: run.sh [-d <output_dir>] <scene_file_path> <config_file_path>"
   exit 1
 fi
 
@@ -40,19 +40,21 @@ if [ ! -d "$output_dir" ]; then
 fi
 
 scene=$1
+config=$2
 scene_parser="scene_parser.cpp"
 scene_parser_obj="scene_parser"
 main="main.cpp"
 main_obj="main"
 
-cp $scene_parser $scene libggutil.hpp libgg.hpp libggutil.cpp libgg.cpp $output_dir/
+cp $scene_parser $scene $config libggutil.hpp libgg.hpp libggutil.cpp libgg.cpp $output_dir/
 cd $output_dir
 
 scene=${scene##*/}
+config=${config##*/}
 
 # running the scene parser
 g++ -o $scene_parser_obj $scene_parser
-./$scene_parser_obj $scene $main
+./$scene_parser_obj $scene $config $main
 
 # running the scene source code
 g++ -o $main_obj $main libggutil.cpp libgg.cpp
