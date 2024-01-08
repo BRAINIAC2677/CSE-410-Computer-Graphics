@@ -4,29 +4,90 @@
 #include<cmath>
 using namespace std;
 
+#include "bitmap_image.hpp"
 #include "libgg.hpp"
 
+static unsigned long int g_seed = 1;
+int screen_height, screen_width;
 SquareMatrix model_matrix, view_matrix, projection_matrix, viewport_matrix;
 stack<SquareMatrix> model_matrix_stack;
+vector<rgb_t> triangle_colors;
 vector<vector<Triangle>> triangles;
+vector<float> z_buffer;
+vector<vector<rgb_t>> color_buffer;
 
-void initViewportMatrix(float _height, float _width) {
+inline int get_random_color() {
+  g_seed = (214013 * g_seed + 2531011);
+  return (g_seed >> 16) & 0x7FFF;
+}
+
+void assign_triangle_colors() {
+  triangle_colors.clear();
+  for (int i = 0; i < triangles[3].size(); i++) {
+    triangle_colors.push_back({(unsigned char)get_random_color(), (unsigned char)get_random_color(), (unsigned char)get_random_color()});
+  }
+}
+
+void init_viewport_matrix() {
   viewport_matrix.set_identity();
   viewport_matrix.values = {
-    {_width / 2, 0, 0, (_width - 1) / 2},
-    {0, _height / 2, 0, (_height - 1) / 2},
+    {(float)screen_width / 2, 0, 0, (float)(screen_width - 1) / 2},
+    {0, (float)screen_height / 2, 0, (float)(screen_height - 1) / 2},
     {0, 0, 1, 0},
     {0, 0, 0, 1}
   };
 }
 
+void z_buffer_algorithm() {
+  for(auto triangle: triangles[3]){
+    triangle.round();
+    vector<Line> edges = triangle.get_edges2d();
+
+    int top_y = max({triangle.vertices[0].y, triangle.vertices[1].y, triangle.vertices[2].y});
+    int bottom_y = min({triangle.vertices[0].y, triangle.vertices[1].y, triangle.vertices[2].y}); 
+    //clipping
+    top_y = min(top_y, screen_height - 1);
+    bottom_y = max(bottom_y, 0);
+
+    for(int y = top_y; y >= bottom_y; y--) 
+    {
+      // find left and right intersecting column
+      int left_x = screen_width - 1;
+      int right_x = 0;
+      Line y_scanline = Line(0, y);
+
+      for(Line edge: edges){
+        if(edge.is_parallel(y_scanline)){
+          continue;
+        }
+        Point2d intersection = edge.get_intersection(y_scanline);
+        intersection.round();
+        left_x = min(left_x, (int)intersection.x);
+        right_x = max(right_x, (int)intersection.x);
+      } 
+      //clipping
+      left_x = max(left_x, 0);
+      right_x = min(right_x, screen_width - 1);
+
+      for(int x = left_x; x <= right_x; x++) {
+
+      }
+
+    }
+  }
+}
+
 void ggInit(int _height, int _width) {
+  screen_height = _height;
+  screen_width = _width;
   model_matrix.set_identity();
   view_matrix.set_identity();
   projection_matrix.set_identity();
-  initViewportMatrix(_height, _width);
+  init_viewport_matrix();
   model_matrix_stack = stack<SquareMatrix>();
   triangles = vector<vector<Triangle>>(4, vector<Triangle>());
+  z_buffer = vector<float>(screen_height * screen_width, 2);
+  color_buffer = vector<vector<rgb_t>>(screen_width, vector<rgb_t>(screen_height, {0, 0, 0}));
 }
 
 void ggLookAt(float _eye_x, float _eye_y, float _eye_z,
@@ -68,7 +129,7 @@ void ggPerspective(float _fovy, float _aspect, float _znear, float _zfar) {
   };
 }
 
-void ggDrawTriangle(Point _v1, Point _v2, Point _v3) {
+void ggDrawTriangle(Point3d _v1, Point3d _v2, Point3d _v3) {
   Triangle t = Triangle(_v1, _v2, _v3);
   t = t.transform(model_matrix);
   triangles[0].push_back(t);

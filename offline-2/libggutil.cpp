@@ -190,9 +190,30 @@ SquareMatrix SquareMatrix::matmul(SquareMatrix _m)
   return SquareMatrix(Matrix::matmul(_m));
 }
 
-Point::Point(float _x, float _y, float _z): x(_x), y(_y), z(_z) {}
+Point2d::Point2d(float _x, float _y): x(_x), y(_y) {}
 
-Point Point::transform(SquareMatrix _m)
+void Point2d::round()
+{
+  x = std::round(x);
+  y = std::round(y);
+}
+
+ostream& operator<<(ostream& _os, const Point2d& _p)
+{
+  _os << "(" << _p.x << ", " << _p.y << ")";
+  return _os;
+}
+
+Point3d::Point3d(float _x, float _y, float _z): x(_x), y(_y), z(_z) {}
+
+void Point3d::round()
+{
+  x = std::round(x);
+  y = std::round(y);
+  z = std::round(z);
+}
+
+Point3d Point3d::transform(SquareMatrix _m)
 {
   assert(_m.get_ndim() == 4);
   Vector4d temp = homogenize();
@@ -200,7 +221,7 @@ Point Point::transform(SquareMatrix _m)
   return result.dehomogenize();  
 }
 
-Point Point::project(SquareMatrix _m)
+Point3d Point3d::project(SquareMatrix _m)
 {
   assert(_m.get_ndim() == 4);
   Matrix temp(4, 1);
@@ -209,15 +230,38 @@ Point Point::project(SquareMatrix _m)
   temp.values[2][0] = z;
   temp.values[3][0] = 1.0;
   Matrix result = _m.matmul(temp);
-  return Point(result.values[0][0]/result.values[3][0], result.values[1][0]/result.values[3][0], result.values[2][0]/result.values[3][0]);
+  return Point3d(result.values[0][0]/result.values[3][0], result.values[1][0]/result.values[3][0], result.values[2][0]/result.values[3][0]);
 }
 
-Vector4d Point::homogenize()
+Line::Line(float _m, float _c): m(_m), c(_c) {}
+
+Line::Line(Point2d _p1, Point2d _p2): m((_p2.y - _p1.y) / (_p2.x - _p1.x)), c(_p1.y - m * _p1.x) {}
+
+bool Line::is_parallel(Line _l)
+{
+  return (m == _l.m);
+}
+
+Point2d Line::get_intersection(Line _l)
+{
+  assert(!is_parallel(_l));
+  float x = (_l.c - c) / (m - _l.m);
+  float y = m * x + c;
+  return Point2d(x, y);
+}
+
+ostream& operator<<(ostream& _os, const Line& _l)
+{
+  _os << "y = " << _l.m << "x + " << _l.c;
+  return _os;
+}
+
+Vector4d Point3d::homogenize()
 {
   return Vector4d(x, y, z, 1.0);
 }
 
-ostream& operator<<(ostream& _os, const Point& _p)
+ostream& operator<<(ostream& _os, const Point3d& _p)
 {
   _os << "(" << _p.x << ", " << _p.y << ", " << _p.z << ")";
   return _os;
@@ -275,7 +319,7 @@ float Vector::dot(Vector _v)
   return result;
 }
 
-Vector3d::Vector3d(Point _p): Vector({_p.x, _p.y, _p.z}) {}
+Vector3d::Vector3d(Point3d _p): Vector({_p.x, _p.y, _p.z}) {}
 
 Vector3d::Vector3d(Matrix _m): Vector(_m) {
   assert(_m.get_nrow() == 3);
@@ -308,7 +352,7 @@ Vector3d Vector3d::cross(Vector3d _v)
   return Vector3d(values[1][0]*_v.values[2][0] - values[2][0]*_v.values[1][0], values[2][0]*_v.values[0][0] - values[0][0]*_v.values[2][0], values[0][0]*_v.values[1][0] - values[1][0]*_v.values[0][0]);
 }
 
-Vector4d::Vector4d(Point _p): Vector({_p.x, _p.y, _p.z, 1.0}) {}
+Vector4d::Vector4d(Point3d _p): Vector({_p.x, _p.y, _p.z, 1.0}) {}
 
 Vector4d::Vector4d(Matrix _m): Vector(_m) {
   assert(_m.get_nrow() == 4);
@@ -336,27 +380,50 @@ float Vector4d::w() const
   return values[3][0];
 }
 
-Point Vector4d::dehomogenize()
+Point3d Vector4d::dehomogenize()
 {
-  return Point(values[0][0]/values[3][0], values[1][0]/values[3][0], values[2][0]/values[3][0]);
+  return Point3d(values[0][0]/values[3][0], values[1][0]/values[3][0], values[2][0]/values[3][0]);
 }
 
-Triangle::Triangle(Point _p1, Point _p2, Point _p3): p1(_p1), p2(_p2), p3(_p3) {}
+Triangle::Triangle(Point3d _p1, Point3d _p2, Point3d _p3): vertices({_p1, _p2, _p3}) {}
+
+void Triangle::round()
+{
+  for (int i = 0; i < 3; i++)
+  {
+    vertices[i].round();
+  }
+}
+
+vector<Line> Triangle::get_edges2d()
+{
+  vector<Point2d> vertices2d;
+  vector<Line> edges2d;
+  for(int i = 0; i < 3; i++)
+  {
+    vertices2d.push_back(Point2d(vertices[i].x, vertices[i].y));
+  } 
+  for(int i = 0; i < 3; i++)
+  {
+    edges2d.push_back(Line(vertices2d[i], vertices2d[(i+1)%3]));
+  }
+  return edges2d;
+}
 
 Triangle Triangle::transform(SquareMatrix _m)
 {
-  return Triangle(p1.transform(_m), p2.transform(_m), p3.transform(_m));
+  return Triangle(vertices[0].transform(_m), vertices[1].transform(_m), vertices[2].transform(_m));
 }
 
 Triangle Triangle::project(SquareMatrix _m)
 {
-  return Triangle(p1.project(_m), p2.project(_m), p3.project(_m));
+  return Triangle(vertices[0].project(_m), vertices[1].project(_m), vertices[2].project(_m));
 }
 
 ostream& operator<<(ostream& _os, const Triangle& _t)
 {
   _os << fixed << setprecision(7); 
-  _os << _t.p1 << "\n" << _t.p2 << "\n" << _t.p3;
+  _os << _t.vertices[0] << "\n" << _t.vertices[1] << "\n" << _t.vertices[2];
   _os.unsetf(ios::fixed);
   return _os;
 }

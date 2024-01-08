@@ -27,6 +27,10 @@ if [ ! -f "libgg.cpp" ]; then
   echo "libgg.cpp not found"
   exit 1
 fi
+if [ ! -f "bitmap_image.hpp" ]; then
+  echo "bitmap_image.hpp not found"
+  exit 1
+fi
 
 output_dir="output"
 if [ "$1" == "-d" ]; then
@@ -46,7 +50,7 @@ scene_parser_obj="scene_parser"
 main="main.cpp"
 main_obj="main"
 
-cp $scene_parser $scene $config libggutil.hpp libgg.hpp libggutil.cpp libgg.cpp $output_dir/
+cp $scene_parser $scene $config bitmap_image.hpp libggutil.hpp libgg.hpp libggutil.cpp libgg.cpp $output_dir/
 cd $output_dir
 
 scene=${scene##*/}
@@ -57,7 +61,7 @@ g++ -o $scene_parser_obj $scene_parser
 ./$scene_parser_obj $scene $config $main
 
 # running the scene source code
-g++ -o $main_obj $main libggutil.cpp libgg.cpp
+g++ -o $main_obj $main bitmap_image.hpp libggutil.cpp libgg.cpp
 ./$main_obj
 
 # cleaning up

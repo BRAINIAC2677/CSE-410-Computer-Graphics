@@ -64,7 +64,7 @@ void gen_triangle(ifstream &_input_file, ofstream &_output_file) {
     getline(_input_file, line);
     line.erase(line.find_last_not_of(" \n\r\t") + 1);
 
-    vertex[i] = "Point(";
+    vertex[i] = "Point3d(";
     vector<string> tokens = split(line, ' ');
     for (int j = 0; j < 3; j++) {
       vertex[i] += tokens[j];

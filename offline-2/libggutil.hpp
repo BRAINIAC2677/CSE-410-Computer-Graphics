@@ -45,16 +45,40 @@ class Vector;
 class Vector3d;
 class Vector4d;
 
-class Point 
+class Point2d
+{
+  public:
+    float x, y;
+    Point2d(float _x, float _y);
+
+    void round();
+    friend ostream& operator<<(ostream& _os, const Point2d& _p);
+};
+
+class Point3d 
 {
   public:
     float x, y, z;
-    Point(float _x, float _y, float _z);
+    Point3d(float _x, float _y, float _z);
     
-    Point transform(SquareMatrix _m);
-    Point project(SquareMatrix _m);
+    void round();
+    Point3d transform(SquareMatrix _m);
+    Point3d project(SquareMatrix _m);
     Vector4d homogenize();    
-    friend ostream& operator<<(ostream& _os, const Point& _p);
+    friend ostream& operator<<(ostream& _os, const Point3d& _p);
+};
+
+class Line 
+{
+  public:
+    float m, c;
+    Line(float _m, float _c);
+    Line(Point2d _p1, Point2d _p2);
+
+    bool is_parallel(Line _l);
+    Point2d get_intersection(Line _l);
+    
+    friend ostream& operator<<(ostream& _os, const Line& _l);
 };
 
 class Vector: public Matrix
@@ -75,7 +99,7 @@ class Vector: public Matrix
 class Vector3d: public Vector
 {
   public:
-    Vector3d(Point _p);
+    Vector3d(Point3d _p);
     Vector3d(Matrix _m);
     Vector3d(float _x, float _y, float _z);
 
@@ -90,7 +114,7 @@ class Vector3d: public Vector
 class Vector4d: public Vector
 {
   public:
-    Vector4d(Point _p);
+    Vector4d(Point3d _p);
     Vector4d(Matrix _m);
     Vector4d(float _x, float _y, float _z, float _w);
 
@@ -99,15 +123,17 @@ class Vector4d: public Vector
     float z() const;
     float w() const;
 
-    Point dehomogenize();
+    Point3d dehomogenize();
 };
 
 class Triangle
 {
   public:
-    Point p1, p2, p3;
-    Triangle(Point _p1, Point _p2, Point _p3);
-    
+    vector<Point3d> vertices;
+    Triangle(Point3d _p1, Point3d _p2, Point3d _p3);
+
+    void round();
+    vector<Line> get_edges2d();
     Triangle transform(SquareMatrix _m);
     Triangle project(SquareMatrix _m);
 
