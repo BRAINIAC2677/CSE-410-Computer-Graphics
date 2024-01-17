@@ -1,13 +1,13 @@
-#include<cmath>
-#include<cassert>
-#include<iostream>
-#include<iomanip>
-#include<initializer_list>
+#include <cmath>
+#include <cassert>
+#include <iostream>
+#include <iomanip>
+#include <initializer_list>
 using namespace std;
 
 #include "libggutil.hpp"
 
-Matrix::Matrix(int _nrow, int _ncol): nrow(_nrow), ncol(_ncol)
+Matrix::Matrix(int _nrow, int _ncol) : nrow(_nrow), ncol(_ncol)
 {
   values.resize(nrow);
   for (int i = 0; i < nrow; i++)
@@ -16,7 +16,7 @@ Matrix::Matrix(int _nrow, int _ncol): nrow(_nrow), ncol(_ncol)
   }
 }
 
-Matrix::Matrix(int _nrow, int _ncol, float _initial): nrow(_nrow), ncol(_ncol)
+Matrix::Matrix(int _nrow, int _ncol, double _initial) : nrow(_nrow), ncol(_ncol)
 {
   values.resize(nrow);
   for (int i = 0; i < nrow; i++)
@@ -66,7 +66,7 @@ Matrix Matrix::operator-(Matrix _m)
   return result;
 }
 
-ostream& operator<<(ostream& _os,  const Matrix& _m)
+ostream &operator<<(ostream &_os, const Matrix &_m)
 {
   _os << fixed << setprecision(7);
   for (int i = 0; i < _m.get_nrow(); i++)
@@ -81,14 +81,14 @@ ostream& operator<<(ostream& _os,  const Matrix& _m)
   return _os;
 }
 
-SquareMatrix::SquareMatrix(int _ndim): Matrix(_ndim, _ndim), ndim(_ndim) {}
+SquareMatrix::SquareMatrix(int _ndim) : Matrix(_ndim, _ndim), ndim(_ndim) {}
 
-SquareMatrix::SquareMatrix(Matrix _m): Matrix(_m), ndim(_m.get_nrow())
+SquareMatrix::SquareMatrix(Matrix _m) : Matrix(_m), ndim(_m.get_nrow())
 {
   assert(ndim == _m.get_ncol());
 }
 
-SquareMatrix::SquareMatrix(int _ndim, float _initial): Matrix(_ndim, _ndim, _initial), ndim(_ndim) {}
+SquareMatrix::SquareMatrix(int _ndim, double _initial) : Matrix(_ndim, _ndim, _initial), ndim(_ndim) {}
 
 int SquareMatrix::get_ndim() const
 {
@@ -119,28 +119,28 @@ SquareMatrix SquareMatrix::transpose()
   return result;
 }
 
-float SquareMatrix::determinant()
+double SquareMatrix::determinant()
 {
   // cofactor expansion for n*n matrix
   if (ndim == 1)
   {
     return values[0][0];
   }
-  float result = 0.0;
+  double result = 0.0;
   for (int i = 0; i < ndim; i++)
   {
-    SquareMatrix submatrix(ndim-1);
+    SquareMatrix submatrix(ndim - 1);
     for (int j = 1; j < ndim; j++)
     {
       for (int k = 0; k < ndim; k++)
       {
         if (k < i)
         {
-          submatrix.values[j-1][k] = values[j][k];
+          submatrix.values[j - 1][k] = values[j][k];
         }
         else if (k > i)
         {
-          submatrix.values[j-1][k-1] = values[j][k];
+          submatrix.values[j - 1][k - 1] = values[j][k];
         }
       }
     }
@@ -152,13 +152,13 @@ float SquareMatrix::determinant()
 SquareMatrix SquareMatrix::inverse()
 {
   // Gauss-Jordan elimination
-  assert (this->determinant() != 0.0);
+  assert(this->determinant() != 0.0);
   SquareMatrix result(ndim, 0.0);
   result.set_identity();
   SquareMatrix temp(*this);
   for (int i = 0; i < ndim; i++)
   {
-    float pivot = temp.values[i][i];
+    double pivot = temp.values[i][i];
     for (int j = 0; j < ndim; j++)
     {
       temp.values[i][j] /= pivot;
@@ -168,7 +168,7 @@ SquareMatrix SquareMatrix::inverse()
     {
       if (j != i)
       {
-        float multiplier = temp.values[j][i];
+        double multiplier = temp.values[j][i];
         for (int k = 0; k < ndim; k++)
         {
           temp.values[j][k] -= multiplier * temp.values[i][k];
@@ -190,7 +190,7 @@ SquareMatrix SquareMatrix::matmul(SquareMatrix _m)
   return SquareMatrix(Matrix::matmul(_m));
 }
 
-Point2d::Point2d(float _x, float _y): x(_x), y(_y) {}
+Point2d::Point2d(double _x, double _y) : x(_x), y(_y) {}
 
 void Point2d::round()
 {
@@ -198,13 +198,13 @@ void Point2d::round()
   y = std::round(y);
 }
 
-ostream& operator<<(ostream& _os, const Point2d& _p)
+ostream &operator<<(ostream &_os, const Point2d &_p)
 {
   _os << "(" << _p.x << ", " << _p.y << ")";
   return _os;
 }
 
-Point3d::Point3d(float _x, float _y, float _z): x(_x), y(_y), z(_z) {}
+Point3d::Point3d(double _x, double _y, double _z) : x(_x), y(_y), z(_z) {}
 
 void Point3d::round()
 {
@@ -218,7 +218,7 @@ Point3d Point3d::transform(SquareMatrix _m)
   assert(_m.get_ndim() == 4);
   Vector4d temp = homogenize();
   Vector4d result = Vector4d(_m.matmul(temp));
-  return result.dehomogenize();  
+  return result.dehomogenize();
 }
 
 Point3d Point3d::project(SquareMatrix _m)
@@ -230,12 +230,12 @@ Point3d Point3d::project(SquareMatrix _m)
   temp.values[2][0] = z;
   temp.values[3][0] = 1.0;
   Matrix result = _m.matmul(temp);
-  return Point3d(result.values[0][0]/result.values[3][0], result.values[1][0]/result.values[3][0], result.values[2][0]/result.values[3][0]);
+  return Point3d(result.values[0][0] / result.values[3][0], result.values[1][0] / result.values[3][0], result.values[2][0] / result.values[3][0]);
 }
 
-Line::Line(float _m, float _c): m(_m), c(_c) {}
+Line::Line(double _m, double _c) : m(_m), c(_c) {}
 
-Line::Line(Point2d _p1, Point2d _p2): m((_p2.y - _p1.y) / (_p2.x - _p1.x)), c(_p1.y - m * _p1.x) {}
+Line::Line(Point2d _p1, Point2d _p2) : m((_p2.y - _p1.y) / (_p2.x - _p1.x)), c(_p1.y - m * _p1.x) {}
 
 bool Line::is_parallel(Line _l)
 {
@@ -245,14 +245,58 @@ bool Line::is_parallel(Line _l)
 Point2d Line::get_intersection(Line _l)
 {
   assert(!is_parallel(_l));
-  float x = (_l.c - c) / (m - _l.m);
-  float y = m * x + c;
+  double x = (_l.c - c) / (m - _l.m);
+  double y = m * x + c;
   return Point2d(x, y);
 }
 
-ostream& operator<<(ostream& _os, const Line& _l)
+ostream &operator<<(ostream &_os, const Line &_l)
 {
   _os << "y = " << _l.m << "x + " << _l.c;
+  return _os;
+}
+
+LineSegment::LineSegment(Point2d _p1, Point2d _p2) : Line(_p1, _p2), endpoints({_p1, _p2}) {}
+
+Point2d LineSegment::get_intersection(Line _l)
+{
+  Point2d result = Line::get_intersection(_l);
+  if (result.x < min(endpoints[0].x, endpoints[1].x) || result.x > max(endpoints[0].x, endpoints[1].x))
+  {
+    return Point2d(NAN, NAN);
+  }
+  if (result.y < min(endpoints[0].y, endpoints[1].y) || result.y > max(endpoints[0].y, endpoints[1].y))
+  {
+    return Point2d(NAN, NAN);
+  }
+  return result;
+}
+
+Point2d LineSegment::get_intersection(LineSegment _ls)
+{
+  Point2d result = Line::get_intersection(_ls);
+  if (result.x < min(endpoints[0].x, endpoints[1].x) || result.x > max(endpoints[0].x, endpoints[1].x))
+  {
+    return Point2d(NAN, NAN);
+  }
+  if (result.y < min(endpoints[0].y, endpoints[1].y) || result.y > max(endpoints[0].y, endpoints[1].y))
+  {
+    return Point2d(NAN, NAN);
+  }
+  if (result.x < min(_ls.endpoints[0].x, _ls.endpoints[1].x) || result.x > max(_ls.endpoints[0].x, _ls.endpoints[1].x))
+  {
+    return Point2d(NAN, NAN);
+  }
+  if (result.y < min(_ls.endpoints[0].y, _ls.endpoints[1].y) || result.y > max(_ls.endpoints[0].y, _ls.endpoints[1].y))
+  {
+    return Point2d(NAN, NAN);
+  }
+  return result;
+}
+
+ostream &operator<<(ostream &_os, const LineSegment &_ls)
+{
+  _os << _ls.endpoints[0] << " - " << _ls.endpoints[1];
   return _os;
 }
 
@@ -261,20 +305,42 @@ Vector4d Point3d::homogenize()
   return Vector4d(x, y, z, 1.0);
 }
 
-ostream& operator<<(ostream& _os, const Point3d& _p)
+ostream &operator<<(ostream &_os, const Point3d &_p)
 {
   _os << "(" << _p.x << ", " << _p.y << ", " << _p.z << ")";
   return _os;
 }
 
-Vector::Vector(int _ndim): Matrix(_ndim, 1), ndim(_ndim) {}
+Plane::Plane(Point3d _p1, Point3d _p2, Point3d _p3)
+{
+  Vector3d v1(Vector3d(_p2) - Vector3d(_p1));
+  Vector3d v2(Vector3d(_p3) - Vector3d(_p1));
+  Vector3d normal(v1.cross(v2));
+  a = normal.x();
+  b = normal.y();
+  c = normal.z();
+  d = -a * _p1.x - b * _p1.y - c * _p1.z;
+}
 
-Vector::Vector(Matrix _m): Matrix(_m), ndim(_m.get_nrow())
+double Plane::z_at(double _x, double _y)
+{
+  return (-a * _x - b * _y - d) / c;
+}
+
+ostream &operator<<(ostream &_os, const Plane &_p)
+{
+  _os << _p.a << "x + " << _p.b << "y + " << _p.c << "z + " << _p.d << " = 0";
+  return _os;
+}
+
+Vector::Vector(int _ndim) : Matrix(_ndim, 1), ndim(_ndim) {}
+
+Vector::Vector(Matrix _m) : Matrix(_m), ndim(_m.get_nrow())
 {
   assert(_m.get_ncol() == 1);
 }
 
-Vector::Vector(initializer_list<float> _l): Matrix(_l.size(), 1), ndim(_l.size())
+Vector::Vector(initializer_list<double> _l) : Matrix(_l.size(), 1), ndim(_l.size())
 {
   int i = 0;
   for (auto it = _l.begin(); it != _l.end(); it++)
@@ -289,9 +355,9 @@ int Vector::get_ndim() const
   return ndim;
 }
 
-float Vector::magnitude()
+double Vector::magnitude()
 {
-  float result = 0.0;
+  double result = 0.0;
   for (int i = 0; i < ndim; i++)
   {
     result += values[i][0] * values[i][0];
@@ -301,17 +367,17 @@ float Vector::magnitude()
 
 void Vector::normalize()
 {
-  float mag = magnitude();
+  double mag = magnitude();
   for (int i = 0; i < ndim; i++)
   {
     values[i][0] /= mag;
   }
 }
 
-float Vector::dot(Vector _v)
+double Vector::dot(Vector _v)
 {
   assert(ndim == _v.get_ndim());
-  float result = 0.0;
+  double result = 0.0;
   for (int i = 0; i < ndim; i++)
   {
     result += values[i][0] * _v.values[i][0];
@@ -319,25 +385,26 @@ float Vector::dot(Vector _v)
   return result;
 }
 
-Vector3d::Vector3d(Point3d _p): Vector({_p.x, _p.y, _p.z}) {}
+Vector3d::Vector3d(Point3d _p) : Vector({_p.x, _p.y, _p.z}) {}
 
-Vector3d::Vector3d(Matrix _m): Vector(_m) {
+Vector3d::Vector3d(Matrix _m) : Vector(_m)
+{
   assert(_m.get_nrow() == 3);
 }
 
-Vector3d::Vector3d(float _x, float _y, float _z): Vector({_x, _y, _z}) {}
+Vector3d::Vector3d(double _x, double _y, double _z) : Vector({_x, _y, _z}) {}
 
-float Vector3d::x() const
+double Vector3d::x() const
 {
   return values[0][0];
 }
 
-float Vector3d::y() const
+double Vector3d::y() const
 {
   return values[1][0];
 }
 
-float Vector3d::z() const
+double Vector3d::z() const
 {
   return values[2][0];
 }
@@ -349,43 +416,44 @@ Vector3d Vector3d::operator-(Vector3d _v)
 
 Vector3d Vector3d::cross(Vector3d _v)
 {
-  return Vector3d(values[1][0]*_v.values[2][0] - values[2][0]*_v.values[1][0], values[2][0]*_v.values[0][0] - values[0][0]*_v.values[2][0], values[0][0]*_v.values[1][0] - values[1][0]*_v.values[0][0]);
+  return Vector3d(values[1][0] * _v.values[2][0] - values[2][0] * _v.values[1][0], values[2][0] * _v.values[0][0] - values[0][0] * _v.values[2][0], values[0][0] * _v.values[1][0] - values[1][0] * _v.values[0][0]);
 }
 
-Vector4d::Vector4d(Point3d _p): Vector({_p.x, _p.y, _p.z, 1.0}) {}
+Vector4d::Vector4d(Point3d _p) : Vector({_p.x, _p.y, _p.z, 1.0}) {}
 
-Vector4d::Vector4d(Matrix _m): Vector(_m) {
+Vector4d::Vector4d(Matrix _m) : Vector(_m)
+{
   assert(_m.get_nrow() == 4);
 }
 
-Vector4d::Vector4d(float _x, float _y, float _z, float _w): Vector({_x, _y, _z, _w}) {}
+Vector4d::Vector4d(double _x, double _y, double _z, double _w) : Vector({_x, _y, _z, _w}) {}
 
-float Vector4d::x() const
+double Vector4d::x() const
 {
   return values[0][0];
 }
 
-float Vector4d::y() const
+double Vector4d::y() const
 {
   return values[1][0];
 }
 
-float Vector4d::z() const
+double Vector4d::z() const
 {
   return values[2][0];
 }
 
-float Vector4d::w() const
+double Vector4d::w() const
 {
   return values[3][0];
 }
 
 Point3d Vector4d::dehomogenize()
 {
-  return Point3d(values[0][0]/values[3][0], values[1][0]/values[3][0], values[2][0]/values[3][0]);
+  return Point3d(values[0][0] / values[3][0], values[1][0] / values[3][0], values[2][0] / values[3][0]);
 }
 
-Triangle::Triangle(Point3d _p1, Point3d _p2, Point3d _p3): vertices({_p1, _p2, _p3}) {}
+Triangle::Triangle(Point3d _p1, Point3d _p2, Point3d _p3) : vertices({_p1, _p2, _p3}) {}
 
 void Triangle::round()
 {
@@ -395,17 +463,34 @@ void Triangle::round()
   }
 }
 
-vector<Line> Triangle::get_edges2d()
+void Triangle::sort_vertices()
+{
+  // keep the top vertex at index 0 and then sort the other in anticlockwise order
+  if (vertices[1].y > vertices[0].y)
+  {
+    swap(vertices[0], vertices[1]);
+  }
+  if (vertices[2].y > vertices[0].y)
+  {
+    swap(vertices[0], vertices[2]);
+  }
+  if (vertices[1].x > vertices[2].x)
+  {
+    swap(vertices[1], vertices[2]);
+  }
+}
+
+vector<LineSegment> Triangle::get_edges2d()
 {
   vector<Point2d> vertices2d;
-  vector<Line> edges2d;
-  for(int i = 0; i < 3; i++)
+  vector<LineSegment> edges2d;
+  for (int i = 0; i < 3; i++)
   {
     vertices2d.push_back(Point2d(vertices[i].x, vertices[i].y));
-  } 
-  for(int i = 0; i < 3; i++)
+  }
+  for (int i = 0; i < 3; i++)
   {
-    edges2d.push_back(Line(vertices2d[i], vertices2d[(i+1)%3]));
+    edges2d.push_back(LineSegment(vertices2d[i], vertices2d[(i + 1) % 3]));
   }
   return edges2d;
 }
@@ -420,17 +505,19 @@ Triangle Triangle::project(SquareMatrix _m)
   return Triangle(vertices[0].project(_m), vertices[1].project(_m), vertices[2].project(_m));
 }
 
-ostream& operator<<(ostream& _os, const Triangle& _t)
+ostream &operator<<(ostream &_os, const Triangle &_t)
 {
-  _os << fixed << setprecision(7); 
-  _os << _t.vertices[0] << "\n" << _t.vertices[1] << "\n" << _t.vertices[2];
+  _os << fixed << setprecision(7);
+  _os << _t.vertices[0] << "\n"
+      << _t.vertices[1] << "\n"
+      << _t.vertices[2];
   _os.unsetf(ios::fixed);
   return _os;
 }
 
-SquareMatrix get_translation_matrix(float _tx, float _ty, float _tz)
+SquareMatrix get_translation_matrix(double _tx, double _ty, double _tz)
 {
-  SquareMatrix result(4 );
+  SquareMatrix result(4);
   result.set_identity();
   result.values[0][3] = _tx;
   result.values[1][3] = _ty;
@@ -438,7 +525,7 @@ SquareMatrix get_translation_matrix(float _tx, float _ty, float _tz)
   return result;
 }
 
-SquareMatrix get_scaling_matrix(float _sx, float _sy, float _sz)
+SquareMatrix get_scaling_matrix(double _sx, double _sy, double _sz)
 {
   SquareMatrix result(4);
   result.set_identity();
@@ -448,7 +535,7 @@ SquareMatrix get_scaling_matrix(float _sx, float _sy, float _sz)
   return result;
 }
 
-SquareMatrix get_rotation_matrix_x(float _angle)
+SquareMatrix get_rotation_matrix_x(double _angle)
 {
   SquareMatrix result(4);
   result.set_identity();
@@ -460,7 +547,7 @@ SquareMatrix get_rotation_matrix_x(float _angle)
   return result;
 }
 
-SquareMatrix get_rotation_matrix_y(float _angle)
+SquareMatrix get_rotation_matrix_y(double _angle)
 {
   SquareMatrix result(4);
   result.set_identity();
@@ -472,7 +559,7 @@ SquareMatrix get_rotation_matrix_y(float _angle)
   return result;
 }
 
-SquareMatrix get_rotation_matrix_z(float _angle)
+SquareMatrix get_rotation_matrix_z(double _angle)
 {
   SquareMatrix result(4);
   result.set_identity();
@@ -488,7 +575,7 @@ SquareMatrix get_alignment_matrix_z(Vector3d _v)
 {
   SquareMatrix result(4);
   result.set_identity();
-  float lambda = sqrt(_v.y()*_v.y() + _v.z()*_v.z());
+  double lambda = sqrt(_v.y() * _v.y() + _v.z() * _v.z());
   result.values[0][0] = lambda / _v.magnitude();
   result.values[0][1] = -_v.x() * _v.y() / (_v.magnitude() * lambda);
   result.values[0][2] = -_v.x() * _v.z() / (_v.magnitude() * lambda);
@@ -500,16 +587,10 @@ SquareMatrix get_alignment_matrix_z(Vector3d _v)
   return result;
 }
 
-SquareMatrix get_rotation_matrix(float _angle, Vector3d _axis)
+SquareMatrix get_rotation_matrix(double _angle, Vector3d _axis)
 {
   SquareMatrix av = get_alignment_matrix_z(_axis);
   SquareMatrix r = get_rotation_matrix_z(_angle);
   SquareMatrix avt = av.transpose();
   return avt.matmul(r.matmul(av));
 }
-
-
-
-
-
-

@@ -5,6 +5,16 @@ using namespace std;
 
 int main()
 {
+    Line l1(0, 2);
+    Line l2(1, 1);
+    cout<<l1.get_intersection(l2)<<endl;
+
+    LineSegment ls1(Point2d(2, 2), Point2d(4, 2));
+    LineSegment ls2(Point2d(6, 7), Point2d(10, 11));
+    cout<<ls1.get_intersection(ls2)<<endl;
+
+    cout<<ls1.get_intersection(l2)<<endl;
+    
     SquareMatrix m1(4);
     cout<<m1<<endl;
     for(int i=0;i<4;i++)

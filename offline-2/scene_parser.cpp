@@ -21,14 +21,16 @@ void gen_init(ofstream &_output_file) {
   _output_file << "  ofstream out2(\"stage2.txt\");" << endl;
   _output_file << "  ofstream out3(\"stage3.txt\");" << endl;
   _output_file << "  ofstream out4(\"stage4.txt\");" << endl;
+  _output_file << "  ofstream z_buffer(\"z_buffer.txt\");" << endl;
 }
 
 void gen_end(ofstream &_output_file) {
-  _output_file << "  ggEnd();" << endl;
+  _output_file << "  ggSaveImage(\"out.bmp\");" << endl;
   _output_file << "  ggPrintTriangles(0, out1);" << endl;
   _output_file << "  ggPrintTriangles(1, out2);" << endl;
   _output_file << "  ggPrintTriangles(2, out3);" << endl;
   _output_file << "  ggPrintTriangles(3, out4);" << endl;
+  _output_file << "  ggPrintZBuffer(z_buffer);" << endl;
   _output_file << "  return 0;" << endl;
   _output_file << "}" << endl;
 }
