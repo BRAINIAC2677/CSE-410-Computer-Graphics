@@ -190,27 +190,28 @@ SquareMatrix SquareMatrix::matmul(SquareMatrix _m)
   return SquareMatrix(Matrix::matmul(_m));
 }
 
-Point2d::Point2d(double _x, double _y) : x(_x), y(_y) {}
-
-void Point2d::round()
-{
-  x = std::round(x);
-  y = std::round(y);
-}
-
-ostream &operator<<(ostream &_os, const Point2d &_p)
-{
-  _os << "(" << _p.x << ", " << _p.y << ")";
-  return _os;
-}
-
 Point3d::Point3d(double _x, double _y, double _z) : x(_x), y(_y), z(_z) {}
 
-void Point3d::round()
+Point3d::Point3d(initializer_list<double> _l)
 {
-  x = std::round(x);
-  y = std::round(y);
-  z = std::round(z);
+  assert(_l.size() == 3);
+  int i = 0;
+  for (auto it = _l.begin(); it != _l.end(); it++)
+  {
+    if (i == 0)
+    {
+      x = *it;
+    }
+    else if (i == 1)
+    {
+      y = *it;
+    }
+    else
+    {
+      z = *it;
+    }
+    i++;
+  }
 }
 
 Point3d Point3d::transform(SquareMatrix _m)
@@ -221,85 +222,6 @@ Point3d Point3d::transform(SquareMatrix _m)
   return result.dehomogenize();
 }
 
-Point3d Point3d::project(SquareMatrix _m)
-{
-  assert(_m.get_ndim() == 4);
-  Matrix temp(4, 1);
-  temp.values[0][0] = x;
-  temp.values[1][0] = y;
-  temp.values[2][0] = z;
-  temp.values[3][0] = 1.0;
-  Matrix result = _m.matmul(temp);
-  return Point3d(result.values[0][0] / result.values[3][0], result.values[1][0] / result.values[3][0], result.values[2][0] / result.values[3][0]);
-}
-
-Line::Line(double _m, double _c) : m(_m), c(_c) {}
-
-Line::Line(Point2d _p1, Point2d _p2) : m((_p2.y - _p1.y) / (_p2.x - _p1.x)), c(_p1.y - m * _p1.x) {}
-
-bool Line::is_parallel(Line _l)
-{
-  return (m == _l.m);
-}
-
-Point2d Line::get_intersection(Line _l)
-{
-  assert(!is_parallel(_l));
-  double x = (_l.c - c) / (m - _l.m);
-  double y = m * x + c;
-  return Point2d(x, y);
-}
-
-ostream &operator<<(ostream &_os, const Line &_l)
-{
-  _os << "y = " << _l.m << "x + " << _l.c;
-  return _os;
-}
-
-LineSegment::LineSegment(Point2d _p1, Point2d _p2) : Line(_p1, _p2), endpoints({_p1, _p2}) {}
-
-Point2d LineSegment::get_intersection(Line _l)
-{
-  Point2d result = Line::get_intersection(_l);
-  if (result.x < min(endpoints[0].x, endpoints[1].x) || result.x > max(endpoints[0].x, endpoints[1].x))
-  {
-    return Point2d(NAN, NAN);
-  }
-  if (result.y < min(endpoints[0].y, endpoints[1].y) || result.y > max(endpoints[0].y, endpoints[1].y))
-  {
-    return Point2d(NAN, NAN);
-  }
-  return result;
-}
-
-Point2d LineSegment::get_intersection(LineSegment _ls)
-{
-  Point2d result = Line::get_intersection(_ls);
-  if (result.x < min(endpoints[0].x, endpoints[1].x) || result.x > max(endpoints[0].x, endpoints[1].x))
-  {
-    return Point2d(NAN, NAN);
-  }
-  if (result.y < min(endpoints[0].y, endpoints[1].y) || result.y > max(endpoints[0].y, endpoints[1].y))
-  {
-    return Point2d(NAN, NAN);
-  }
-  if (result.x < min(_ls.endpoints[0].x, _ls.endpoints[1].x) || result.x > max(_ls.endpoints[0].x, _ls.endpoints[1].x))
-  {
-    return Point2d(NAN, NAN);
-  }
-  if (result.y < min(_ls.endpoints[0].y, _ls.endpoints[1].y) || result.y > max(_ls.endpoints[0].y, _ls.endpoints[1].y))
-  {
-    return Point2d(NAN, NAN);
-  }
-  return result;
-}
-
-ostream &operator<<(ostream &_os, const LineSegment &_ls)
-{
-  _os << _ls.endpoints[0] << " - " << _ls.endpoints[1];
-  return _os;
-}
-
 Vector4d Point3d::homogenize()
 {
   return Vector4d(x, y, z, 1.0);
@@ -308,28 +230,6 @@ Vector4d Point3d::homogenize()
 ostream &operator<<(ostream &_os, const Point3d &_p)
 {
   _os << "(" << _p.x << ", " << _p.y << ", " << _p.z << ")";
-  return _os;
-}
-
-Plane::Plane(Point3d _p1, Point3d _p2, Point3d _p3)
-{
-  Vector3d v1(Vector3d(_p2) - Vector3d(_p1));
-  Vector3d v2(Vector3d(_p3) - Vector3d(_p1));
-  Vector3d normal(v1.cross(v2));
-  a = normal.x();
-  b = normal.y();
-  c = normal.z();
-  d = -a * _p1.x - b * _p1.y - c * _p1.z;
-}
-
-double Plane::z_at(double _x, double _y)
-{
-  return (-a * _x - b * _y - d) / c;
-}
-
-ostream &operator<<(ostream &_os, const Plane &_p)
-{
-  _os << _p.a << "x + " << _p.b << "y + " << _p.c << "z + " << _p.d << " = 0";
   return _os;
 }
 
@@ -455,54 +355,9 @@ Point3d Vector4d::dehomogenize()
 
 Triangle::Triangle(Point3d _p1, Point3d _p2, Point3d _p3) : vertices({_p1, _p2, _p3}) {}
 
-void Triangle::round()
-{
-  for (int i = 0; i < 3; i++)
-  {
-    vertices[i].round();
-  }
-}
-
-void Triangle::sort_vertices()
-{
-  // keep the top vertex at index 0 and then sort the other in anticlockwise order
-  if (vertices[1].y > vertices[0].y)
-  {
-    swap(vertices[0], vertices[1]);
-  }
-  if (vertices[2].y > vertices[0].y)
-  {
-    swap(vertices[0], vertices[2]);
-  }
-  if (vertices[1].x > vertices[2].x)
-  {
-    swap(vertices[1], vertices[2]);
-  }
-}
-
-vector<LineSegment> Triangle::get_edges2d()
-{
-  vector<Point2d> vertices2d;
-  vector<LineSegment> edges2d;
-  for (int i = 0; i < 3; i++)
-  {
-    vertices2d.push_back(Point2d(vertices[i].x, vertices[i].y));
-  }
-  for (int i = 0; i < 3; i++)
-  {
-    edges2d.push_back(LineSegment(vertices2d[i], vertices2d[(i + 1) % 3]));
-  }
-  return edges2d;
-}
-
 Triangle Triangle::transform(SquareMatrix _m)
 {
   return Triangle(vertices[0].transform(_m), vertices[1].transform(_m), vertices[2].transform(_m));
-}
-
-Triangle Triangle::project(SquareMatrix _m)
-{
-  return Triangle(vertices[0].project(_m), vertices[1].project(_m), vertices[2].project(_m));
 }
 
 ostream &operator<<(ostream &_os, const Triangle &_t)

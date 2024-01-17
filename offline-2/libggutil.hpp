@@ -5,10 +5,13 @@
 #include <vector>
 using namespace std;
 
+class Vector;
+class Vector3d;
+class Vector4d;
+
 class Matrix
 {
   int nrow, ncol;
-
 public:
   vector<vector<double>> values;
   Matrix(int _nrow, int _ncol);
@@ -25,35 +28,21 @@ public:
 class SquareMatrix : public Matrix
 {
   int ndim;
-
 public:
-  SquareMatrix(int _ndim = 4);
+
   SquareMatrix(Matrix _m);
+  SquareMatrix(int _ndim = 4);
   SquareMatrix(int _ndim, double _initial);
 
   int get_ndim() const;
   void set_identity();
 
-  SquareMatrix transpose();
   double determinant();
+  SquareMatrix transpose();
   SquareMatrix inverse();
 
   Matrix matmul(Matrix _m);
   SquareMatrix matmul(SquareMatrix _m);
-};
-
-class Vector;
-class Vector3d;
-class Vector4d;
-
-class Point2d
-{
-public:
-  double x, y;
-  Point2d(double _x, double _y);
-
-  void round();
-  friend ostream &operator<<(ostream &_os, const Point2d &_p);
 };
 
 class Point3d
@@ -61,62 +50,22 @@ class Point3d
 public:
   double x, y, z;
   Point3d(double _x, double _y, double _z);
+  Point3d(initializer_list<double> _l);
 
-  void round();
   Point3d transform(SquareMatrix _m);
-  Point3d project(SquareMatrix _m);
   Vector4d homogenize();
   friend ostream &operator<<(ostream &_os, const Point3d &_p);
-};
-
-class Line
-{
-public:
-  double m, c;
-  Line(double _m, double _c);
-  Line(Point2d _p1, Point2d _p2);
-
-  bool is_parallel(Line _l);
-  Point2d get_intersection(Line _l);
-
-  friend ostream &operator<<(ostream &_os, const Line &_l);
-};
-
-class LineSegment : public Line
-{
-public:
-  vector<Point2d> endpoints;
-  LineSegment(Point2d _p1, Point2d _p2);
-
-  Point2d get_intersection(Line _l);
-  Point2d get_intersection(LineSegment _ls);
-
-  friend ostream &operator<<(ostream &_os, const LineSegment &_ls);
-};
-
-class Plane
-{
-  double a, b, c, d;
-
-public:
-  Plane(Point3d _p1, Point3d _p2, Point3d _p3);
-
-  double z_at(double _x, double _y);
-
-  friend ostream &operator<<(ostream &_os, const Plane &_p);
 };
 
 class Vector : public Matrix
 {
   int ndim;
-
 public:
-  Vector(int _ndim = 4);
   Vector(Matrix _m);
+  Vector(int _ndim = 4);
   Vector(initializer_list<double> _l);
 
   int get_ndim() const;
-
   double magnitude();
   void normalize();
   double dot(Vector _v);
@@ -158,11 +107,7 @@ public:
   vector<Point3d> vertices;
   Triangle(Point3d _p1, Point3d _p2, Point3d _p3);
 
-  void round();
-  void sort_vertices();
-  vector<LineSegment> get_edges2d();
   Triangle transform(SquareMatrix _m);
-  Triangle project(SquareMatrix _m);
 
   friend ostream &operator<<(ostream &_os, const Triangle &_t);
 };

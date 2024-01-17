@@ -20,7 +20,6 @@ void gen_init(ofstream &_output_file) {
   _output_file << "  ofstream out1(\"stage1.txt\");" << endl;
   _output_file << "  ofstream out2(\"stage2.txt\");" << endl;
   _output_file << "  ofstream out3(\"stage3.txt\");" << endl;
-  _output_file << "  ofstream out4(\"stage4.txt\");" << endl;
   _output_file << "  ofstream z_buffer(\"z_buffer.txt\");" << endl;
 }
 
@@ -29,7 +28,6 @@ void gen_end(ofstream &_output_file) {
   _output_file << "  ggPrintTriangles(0, out1);" << endl;
   _output_file << "  ggPrintTriangles(1, out2);" << endl;
   _output_file << "  ggPrintTriangles(2, out3);" << endl;
-  _output_file << "  ggPrintTriangles(3, out4);" << endl;
   _output_file << "  ggPrintZBuffer(z_buffer);" << endl;
   _output_file << "  return 0;" << endl;
   _output_file << "}" << endl;
@@ -66,7 +64,7 @@ void gen_triangle(ifstream &_input_file, ofstream &_output_file) {
     getline(_input_file, line);
     line.erase(line.find_last_not_of(" \n\r\t") + 1);
 
-    vertex[i] = "Point3d(";
+    vertex[i] = "{";
     vector<string> tokens = split(line, ' ');
     for (int j = 0; j < 3; j++) {
       vertex[i] += tokens[j];
@@ -74,7 +72,7 @@ void gen_triangle(ifstream &_input_file, ofstream &_output_file) {
         vertex[i] += ", ";
       }
     }
-    vertex[i] += ")";
+    vertex[i] += "}";
   }
   _output_file << "  ggDrawTriangle(" << vertex[0] << ", " << vertex[1] << ", "
                << vertex[2] << ");" << endl;

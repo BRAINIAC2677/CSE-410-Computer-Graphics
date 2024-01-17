@@ -34,7 +34,6 @@ fi
 
 output_dir="output"
 if [ "$1" == "-d" ]; then
-  echo "Output directory: $2"
   output_dir=$2
   shift
   shift
@@ -50,8 +49,10 @@ scene_parser_obj="scene_parser"
 main="main.cpp"
 main_obj="main"
 
-cp $scene_parser $scene $config bitmap_image.hpp libggutil.hpp libgg.hpp libggutil.cpp libgg.cpp $output_dir/
+cp $scene_parser $scene $config bitmap_image.hpp libggutil.hpp libggutil.cpp libgg.hpp libgg.cpp $output_dir/
 cd $output_dir
+
+echo "Output directory: $output_dir ready"
 
 scene=${scene##*/}
 config=${config##*/}
@@ -59,14 +60,17 @@ config=${config##*/}
 # running the scene parser
 g++ -o $scene_parser_obj $scene_parser
 ./$scene_parser_obj $scene $config $main
+echo "Scene parsing done"
 
 # running the scene source code
 g++ -o $main_obj $main bitmap_image.hpp libggutil.cpp libgg.cpp
 ./$main_obj
+echo "Scene rendering done"
 
 # cleaning up
-# rm $scene_parser_obj $main_obj
-# rm $scene_parser libggutil.hpp libgg.hpp libggutil.cpp libgg.cpp
+rm $scene_parser_obj $main_obj
+# rm $scene_parser libggutil.hpp libgg.hpp libggutil.cpp libgg.cpp bitmap_image.hpp
+echo "Clean up done"
 
 cd ..
 
