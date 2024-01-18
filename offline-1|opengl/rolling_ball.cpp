@@ -16,7 +16,7 @@ using namespace std;
 #endif
 
 GLsizei GGwindow_position_x = 100, GGwindow_position_y = 100;
-GLsizei GGwindow_width = 700, GGwindow_height = 700;
+GLsizei GGwindow_width = 1920, GGwindow_height = 1080;
 GLdouble GG_FOVY = 45, GG_ZNEAR = 1, GG_ZFAR = 500;
 
 GLint GG_TILE_COUNT = 100, GG_TILE_SIZE = 10;

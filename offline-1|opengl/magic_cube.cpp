@@ -16,7 +16,7 @@ using namespace std;
 #endif
 
 GLsizei GGwindow_position_x = 100, GGwindow_position_y = 100;
-GLsizei GGwindow_width = 700, GGwindow_height = 700;
+GLsizei GGwindow_width = 1920, GGwindow_height = 1080;
 GLint GG_AXIS_LENGTH = 400;
 GLint GG_GRID_LENGTH = 5;
 GLint GG_GRID_COUNT = 20;
@@ -25,7 +25,7 @@ GLdouble GG_FOVY = 45, GG_ZNEAR = 1, GG_ZFAR = 500;
 
 GLdouble GG_CAMERA_CHANGE = 5;
 GLdouble GG_CAMERA_ANGLE_CHANGE = 10;
-GLdouble GG_CAMERA_PARAMETER = 40;
+GLdouble GG_CAMERA_PARAMETER = 100;
 
 GGvector GGcamera_position(GG_CAMERA_PARAMETER, GG_CAMERA_PARAMETER, GG_CAMERA_PARAMETER);
 GGvector GGcamera_view(-GG_CAMERA_PARAMETER, -GG_CAMERA_PARAMETER, -GG_CAMERA_PARAMETER);
