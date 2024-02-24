@@ -1,0 +1,314 @@
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+#include "1905004_classes.hpp"
+
+#ifdef __linux__
+#include <GL/glut.h>
+#elif WIN32
+#include <glut.h>
+#include <windows.h>
+#endif
+
+Vector3D::Vector3D(double _x, double _y, double _z) : x(_x), y(_y), z(_z) {}
+
+Vector3D Vector3D::normalize()
+{
+    double _magnitude = magnitude();
+    x /= _magnitude;
+    y /= _magnitude;
+    z /= _magnitude;
+    return *this;
+}
+
+double Vector3D::magnitude() const
+{
+    return sqrt(x * x + y * y + z * z);
+}
+
+Vector3D Vector3D::operator+(const Vector3D &v) const
+{
+    return Vector3D(x + v.x, y + v.y, z + v.z);
+}
+
+Vector3D Vector3D::operator+(const double &d) const
+{
+    return Vector3D(x + d, y + d, z + d);
+}
+
+Vector3D Vector3D::operator+=(const Vector3D &v)
+{
+    x += v.x;
+    y += v.y;
+    z += v.z;
+    return *this;
+}
+
+Vector3D Vector3D::operator+=(const double &d)
+{
+    x += d;
+    y += d;
+    z += d;
+    return *this;
+}
+
+Vector3D Vector3D::operator-(const Vector3D &v) const
+{
+    return Vector3D(x - v.x, y - v.y, z - v.z);
+}
+
+Vector3D Vector3D::operator-(const double &d) const
+{
+    return Vector3D(x - d, y - d, z - d);
+}
+
+Vector3D Vector3D::operator-=(const Vector3D &v)
+{
+    x -= v.x;
+    y -= v.y;
+    z -= v.z;
+    return *this;
+}
+
+Vector3D Vector3D::operator-=(const double &d)
+{
+    x -= d;
+    y -= d;
+    z -= d;
+    return *this;
+}
+
+Vector3D Vector3D::operator*(const Vector3D &v) const
+{
+    return Vector3D(x * v.x, y * v.y, z * v.z);
+}
+
+Vector3D Vector3D::operator*(const double &d) const
+{
+    return Vector3D(x * d, y * d, z * d);
+}
+
+Vector3D Vector3D::operator*=(const Vector3D &v)
+{
+    x *= v.x;
+    y *= v.y;
+    z *= v.z;
+    return *this;
+}
+
+Vector3D Vector3D::operator*=(const double &d)
+{
+    x *= d;
+    y *= d;
+    z *= d;
+    return *this;
+}
+
+Vector3D Vector3D::operator^(const Vector3D &v) const
+{
+    return Vector3D(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x);
+}
+
+ostream &operator<<(ostream &_out, const Vector3D &_v)
+{
+    _out << "< " << _v.x << " " << _v.y << " " << _v.z << " >";
+    return _out;
+}
+
+Ray::Ray() : origin(0, 0, 0), direction(1, 1, 1) {}
+
+Ray::Ray(Vector3D _origin, Vector3D _direction) : origin(_origin), direction(_direction) {}
+
+Ray Ray::set_origin(Vector3D _origin)
+{
+    origin = _origin;
+    return *this;
+}
+
+Ray Ray::set_direction(Vector3D _direction)
+{
+    direction = _direction;
+    return *this;
+}
+
+ostream &operator<<(ostream &_out, const Ray &_r)
+{
+    _out << "Origin: " << _r.origin << " Direction: " << _r.direction;
+    return _out;
+}
+
+Object::Object() : reference_point(0, 0, 0), height(0), width(0), length(0), shine(0)
+{
+    color[0] = 0;
+    color[1] = 0;
+    color[2] = 0;
+    coefficents[0] = 0;
+    coefficents[1] = 0;
+    coefficents[2] = 0;
+    coefficents[3] = 0;
+}
+
+Object Object::set_color(double _r, double _g, double _b)
+{
+    color[0] = _r;
+    color[1] = _g;
+    color[2] = _b;
+    return *this;
+}
+
+Object Object::set_shine(int _shine)
+{
+    shine = _shine;
+    return *this;
+}
+
+Object Object::set_coefficients(double _ambient, double _diffuse, double _specular, double _reflection)
+{
+    coefficents[0] = _ambient;
+    coefficents[1] = _diffuse;
+    coefficents[2] = _specular;
+    coefficents[3] = _reflection;
+    return *this;
+}
+
+void Object::draw()
+{
+    cout << "Object " << *this << endl;
+}
+
+double Object::intersect(Ray *_ray, double *_color, int _level)
+{
+  return -1.0;
+}
+
+ostream &operator<<(ostream &_out, const Object &_o)
+{
+    _out << "Reference Point: " << _o.reference_point << " Height: " << _o.height << " Width: " << _o.width << " Length: " << _o.length << " Color: " << _o.color[0] << " " << _o.color[1] << " " << _o.color[2] << " Coefficients: " << _o.coefficents[0] << " " << _o.coefficents[1] << " " << _o.coefficents[2] << " " << _o.coefficents[3] << " Shine: " << _o.shine;
+    return _out;
+}
+
+Sphere::Sphere(Vector3D _center, double _radius) : Object()
+{
+    reference_point = _center;
+    height = _radius;
+    width = _radius;
+    length = _radius;
+}
+
+void Sphere::draw()
+{
+    glPushMatrix();
+    {
+        glColor3f(color[0], color[1], color[2]);
+        glTranslatef(reference_point.x, reference_point.y, reference_point.z);
+        glutSolidSphere(length, 20, 20);
+    }
+    glPopMatrix();
+}
+
+double Sphere::intersect(Ray *_ray, double *_color, int _level)
+{
+    return -1.0;
+}
+
+Floor::Floor(double _tile_count, double _tile_size) : Object(), tile_count(_tile_count), tile_size(_tile_size)
+{
+    reference_point = Vector3D(-_tile_count * _tile_size / 2, -_tile_count * _tile_size / 2, 0);
+    height = 0;
+    width = _tile_count * _tile_size;
+    length = _tile_count * _tile_size;
+}
+
+void Floor::draw()
+{
+    int start_x = -tile_count * tile_size / 2;
+    int start_y = -tile_count * tile_size / 2;
+    glBegin(GL_QUADS);
+    {
+        for (int i = 0; i < tile_count; i++)
+        {
+            for (int j = 0; j < tile_count; j++)
+            {
+                if ((i + j) % 2 == 0)
+                {
+                    glColor3f(1.0f, 1.0f, 1.0f);
+                }
+                else
+                {
+                    glColor3f(0.0f, 0.0f, 0.0f);
+                }
+
+                glVertex3f(start_x + i * tile_size, start_y + j * tile_size, 0);
+                glVertex3f(start_x + (i + 1) * tile_size, start_y + j * tile_size, 0);
+                glVertex3f(start_x + (i + 1) * tile_size, start_y + (j + 1) * tile_size, 0);
+                glVertex3f(start_x + i * tile_size, start_y + (j + 1) * tile_size, 0);
+            }
+        }
+        glEnd();
+    }
+}
+
+PointLight::PointLight() : light_position(0, 0, 0)
+{
+    color[0] = 0;
+    color[1] = 0;
+    color[2] = 0;
+}
+
+PointLight PointLight::set_light_position(double _x, double _y, double _z)
+{
+    light_position.x = _x;
+    light_position.y = _y;
+    light_position.z = _z;
+    return *this;
+}
+
+PointLight PointLight::set_color(double _r, double _g, double _b)
+{
+    color[0] = _r;
+    color[1] = _g;
+    color[2] = _b;
+    return *this;
+}
+
+ostream &operator<<(ostream &_out, const PointLight &_p)
+{
+    _out << "Light Position: " << _p.light_position << " Color: " << _p.color[0] << " " << _p.color[1] << " " << _p.color[2];
+    return _out;
+}
+
+SpotLight::SpotLight() : light_direction(0, 0, 0), cutoff_angle(0) {}
+
+SpotLight SpotLight::set_light_position(double _x, double _y, double _z)
+{
+    point_light.set_light_position(_x, _y, _z);
+    return *this;
+}
+
+SpotLight SpotLight::set_color(double _r, double _g, double _b)
+{
+    point_light.set_color(_r, _g, _b);
+    return *this;
+}
+
+SpotLight SpotLight::set_light_direction(double _x, double _y, double _z)
+{
+    light_direction.x = _x;
+    light_direction.y = _y;
+    light_direction.z = _z;
+    light_direction.normalize();
+    return *this;
+}
+
+SpotLight SpotLight::set_cutoff_angle(double _angle)
+{
+    cutoff_angle = _angle;
+    return *this;
+}
+
+ostream &operator<<(ostream &_out, const SpotLight &_s)
+{
+    cout << _s.point_light << " Direction: " << _s.light_direction << " Cutoff Angle: " << _s.cutoff_angle;
+    return _out;
+}
