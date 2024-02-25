@@ -10,14 +10,15 @@ using namespace std;
 #include <windows.h>
 #endif
 
-double window_width = 700, window_height = 700;
+double window_width, window_height;
+double image_width, image_height;
 double window_position_x = 100, window_position_y = 100;
 
 double fovy = 45, znear = 1, zfar = 500;
 double camera_change = 5;
 double camera_angle_change = 10;
 
-Vector3D camera_pos = Vector3D(200, 0, 10);
+Vector3D camera_pos = Vector3D(200, 200, 50);
 Vector3D camera_up = Vector3D(0, 0, 1);
 Vector3D camera_look = Vector3D(-1 / sqrt(2), -1 / sqrt(2), 0);
 Vector3D camera_right = Vector3D(-1 / sqrt(2), 1 / sqrt(2), 0);
@@ -37,7 +38,7 @@ void capture();
 void load_objects(ifstream &_in)
 {
     Floor *checkered_floor = new Floor(tile_count, tile_size);
-    // objects.push_back(checkered_floor);
+    objects.push_back(checkered_floor);
 
     int n_objects;
     _in >> n_objects;
@@ -130,6 +131,7 @@ void load_data(string _file_name)
     double dimension;
     in >> recursion_level >> dimension;
     window_height = window_width = dimension;
+    image_height = image_width = dimension;
     load_objects(in);
     load_pointlights(in);
     load_spotlights(in);
@@ -163,8 +165,9 @@ void init()
     gluPerspective(fovy, aspect, znear, zfar);
     glMatrixMode(GL_MODELVIEW);
 
-    load_data("ios/scene_test-1.txt");
-    // print_inputs();
+    camera_look.normalize();
+    camera_up.normalize();
+    camera_right.normalize();
 }
 
 void draw_objects()
@@ -172,6 +175,18 @@ void draw_objects()
     for (int i = 0; i < objects.size(); i++)
     {
         objects[i]->draw();
+    }
+}
+
+void draw_lights()
+{
+    for (int i = 0; i < pointlights.size(); i++)
+    {
+        pointlights[i]->draw();
+    }
+    for (int i = 0; i < spotlights.size(); i++)
+    {
+        spotlights[i]->draw();
     }
 }
 
@@ -186,6 +201,7 @@ void display()
     gluLookAt(camera_pos.x, camera_pos.y, camera_pos.z, camera_pos.x + camera_look.x, camera_pos.y + camera_look.y, camera_pos.z + camera_look.z, camera_up.x, camera_up.y, camera_up.z);
 
     draw_objects();
+    draw_lights();
 
     glutSwapBuffers();
 }
@@ -296,6 +312,8 @@ void idle()
 
 int main(int argc, char **argv)
 {
+
+    load_data("ios/scene_test-1.txt");
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(window_width, window_height);
@@ -318,33 +336,32 @@ int main(int argc, char **argv)
 
 double degree_to_radian(double _degree)
 {
-    return _degree * acos(-1) / 180.0;
+    return _degree * 2 * acos(0) / 180.0;
 }
 
 void capture()
 {
     cout << "Capturing..." << endl;
-    double image_width = window_width, image_height = window_height;
     bitmap_image image(image_width, image_height);
     image.clear();
 
-    double plane_distance = (window_height / 2) / tan(degree_to_radian(fovy / 2));
+    double plane_distance = (window_height / 2.0) / tan(degree_to_radian(fovy / 2.0));
 
-    Vector3D top_left = camera_pos + (camera_look.normalize() * plane_distance) + camera_up.normalize() * (window_height / 2) - camera_right.normalize() * (window_width / 2);
+    Vector3D top_left = camera_pos + (camera_look * plane_distance) + (camera_up * (window_height / 2.0)) - (camera_right * (window_width / 2.0));
 
     double du = window_width / image_width, dv = window_height / image_height;
 
-    top_left = top_left + (camera_right.normalize() * (du / 2)) - (camera_up.normalize() * (dv / 2));
+    top_left = top_left + (camera_right * du * 0.5) - (camera_up * dv * 0.5);
 
-    for (int i = 0; i < image_height; i++)
+    for (int i = 0; i < image_width; i++)
     {
-        for (int j = 0; j < image_width; j++)
+        for (int j = 0; j < image_height; j++)
         {
-            Vector3D current_pixel = top_left + (camera_right.normalize() * j * du) - (camera_up.normalize() * i * dv);
+            Vector3D current_pixel = top_left + (camera_right * i * du) - (camera_up * j * dv);
 
             Vector3D ray_vector = current_pixel - camera_pos;
 
-            Ray *ray = new Ray(camera_pos, ray_vector.normalize());
+            Ray *ray = new Ray(camera_pos, ray_vector);
 
             Color *color = new Color(0, 0, 0);
             double tmin = -1;
@@ -352,7 +369,7 @@ void capture()
 
             for (auto obj : objects)
             {
-                double t = obj->intersect(ray, color, 1);
+                double t = obj->intersect(ray, color, 0);
                 if ((t > 0) && (t < tmin || (nearest_object == nullptr)))
                 {
                     tmin = t;
@@ -366,21 +383,10 @@ void capture()
                 color->r = round(color->r * 255);
                 color->g = round(color->g * 255);
                 color->b = round(color->b * 255);
-                cout << *color << endl;
-                image.set_pixel(j, i, color->r, color->g, color->b);
+                image.set_pixel(i, j, color->r, color->g, color->b);
             }
         }
     }
-
-    // print the image pixels
-    // for (int i = 0; i < image_height; i++)
-    // {
-    //     for (int j = 0; j < image_width; j++)
-    //     {
-    //         cout << (image.get_pixel(j, i).red) << " " << (image.get_pixel(j, i).green) << " " << (image.get_pixel(j, i).blue) << " ";
-    //     }
-    //     cout << endl;
-    // }
 
     capture_count++;
     image.save_image("output/capture-" + to_string(capture_count) + ".bmp");

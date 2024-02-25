@@ -108,6 +108,7 @@ public:
     PointLight set_color(Color _color);
     Vector3D get_light_position() const;
     Color get_color() const;
+    void draw();
     friend ostream &operator<<(ostream &_out, const PointLight &_p);
 };
 
@@ -128,6 +129,7 @@ public:
     Color get_color() const;
     Vector3D get_light_direction() const;
     double get_cutoff_angle() const;
+    void draw();
     friend ostream &operator<<(ostream &_out, const SpotLight &_s);
 };
 

@@ -116,9 +116,15 @@ ostream &operator<<(ostream &_out, const Vector3D &_v)
     return _out;
 }
 
-Ray::Ray() : origin(0, 0, 0), direction(1, 1, 1) {}
+Ray::Ray() : origin(0, 0, 0), direction(1, 1, 1)
+{
+    direction.normalize();
+}
 
-Ray::Ray(Vector3D _origin, Vector3D _direction) : origin(_origin), direction(_direction) {}
+Ray::Ray(Vector3D _origin, Vector3D _direction) : origin(_origin), direction(_direction)
+{
+    direction.normalize();
+}
 
 Ray Ray::set_origin(Vector3D _origin)
 {
@@ -187,8 +193,6 @@ double Object::intersect(Ray *_ray, Color *_color, int _level)
     return -1.0;
 }
 
-// int obs_count = 0, nobs_count = 0;
-
 double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
 {
     double tmin = intersect(_ray, _color, _level);
@@ -211,12 +215,8 @@ double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
     {
         Ray light_ray = Ray(point_light->get_light_position(), intersection_point - point_light->get_light_position());
         Ray normal_ray = Ray(intersection_point, get_normal_at(intersection_point));
-        Ray reflected_ray = Ray(intersection_point, normal_ray.direction * (2 * (light_ray.direction * normal_ray.direction)) - light_ray.direction);
+        Ray reflected_ray = Ray(intersection_point, light_ray.direction - normal_ray.direction * (2 * (light_ray.direction * normal_ray.direction)));
         Ray view_ray = *_ray;
-        light_ray.direction.normalize();
-        normal_ray.direction.normalize();
-        reflected_ray.direction.normalize();
-        view_ray.direction.normalize();
 
         double distance = (point_light->get_light_position() - intersection_point).magnitude();
         if (distance < epsilon)
@@ -234,42 +234,21 @@ double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
                 break;
             }
         }
-        cout << "obscured: " << obscured << endl;
-        // obs_count += obscured;
-        // nobs_count += (!obscured);
 
         if (!obscured)
         {
-            double diffuse = max(light_ray.direction * normal_ray.direction, 0.0);
-            double specular = max(reflected_ray.direction * view_ray.direction, 0.0);
+            double diffuse = max(-(light_ray.direction * normal_ray.direction), 0.0);
+            double specular = max(-(reflected_ray.direction * view_ray.direction), 0.0);
 
-            // cout << "after ambient reflection: " << (*_color) << endl;
-            // diffused reflection
-
-            // cout << "point_light->get_color().r: " << point_light->get_color().r << endl;
-            // cout << "intersection_point_color.r: " << intersection_point_color.r << endl;
-            // cout << "coefficents.diffuse: " << coefficents.diffuse << endl;
-            // cout << "diffuse: " << diffuse << endl;
-            // cout << "point_light->get_color().r * intersection_point_color.r * (coefficents.diffuse * diffuse): " << point_light->get_color().r * intersection_point_color.r * (coefficents.diffuse * diffuse) << endl;
-
-            // cout << "point_light->get_color().g: " << point_light->get_color().g << endl;
-            // cout << "intersection_point_color.g: " << intersection_point_color.g << endl;
-            // cout << "coefficents.diffuse: " << coefficents.diffuse << endl;
-            // cout << "diffuse: " << diffuse << endl;
-            // cout << "multiplication: " << point_light->get_color().g * intersection_point_color.g * (coefficents.diffuse * diffuse) << endl;
-
+            // diffuse reflection
             _color->r += point_light->get_color().r * intersection_point_color.r * (coefficents.diffuse * diffuse);
             _color->g += point_light->get_color().g * intersection_point_color.g * (coefficents.diffuse * diffuse);
             _color->b += point_light->get_color().b * intersection_point_color.b * (coefficents.diffuse * diffuse);
 
-            // cout << "after diffused reflection: " << (*_color) << endl;
-
             // specular reflection
-            // _color->r += point_light->get_color().r * intersection_point_color.r * (coefficents.specular * pow(specular, shine));
-            // _color->g += point_light->get_color().g * intersection_point_color.g * (coefficents.specular * pow(specular, shine));
-            // _color->b += point_light->get_color().b * intersection_point_color.b * (coefficents.specular * pow(specular, shine));
-
-            // cout << "after specular reflection: " << (*_color) << endl;
+            _color->r += point_light->get_color().r * intersection_point_color.r * (coefficents.specular * pow(specular, shine));
+            _color->g += point_light->get_color().g * intersection_point_color.g * (coefficents.specular * pow(specular, shine));
+            _color->b += point_light->get_color().b * intersection_point_color.b * (coefficents.specular * pow(specular, shine));
 
             _color->r = min(1.0, _color->r);
             _color->g = min(1.0, _color->g);
@@ -279,8 +258,6 @@ double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
             _color->b = max(0.0, _color->b);
         }
     }
-    // cout << "obs_count: " << obs_count << endl;
-    // cout << "nobs_count: " << nobs_count << endl;
     return tmin;
 }
 
@@ -318,10 +295,13 @@ Vector3D Sphere::get_normal_at(Vector3D _point)
 
 double Sphere::intersect(Ray *_ray, Color *_color, int _level)
 {
+    _ray->origin -= reference_point;
     double a = 1;
     double b = 2 * (_ray->direction * _ray->origin);
     double c = _ray->origin * _ray->origin - length * length;
     double discriminant = b * b - 4 * a * c;
+    _ray->origin += reference_point;
+
     if (discriminant < 0)
     {
         return -1.0;
@@ -415,6 +395,17 @@ Color PointLight::get_color() const
     return color;
 }
 
+void PointLight::draw()
+{
+    glPushMatrix();
+    {
+        glColor3f(color.r, color.g, color.b);
+        glTranslatef(light_position.x, light_position.y, light_position.z);
+        glutSolidSphere(5, 200, 200);
+    }
+    glPopMatrix();
+}
+
 ostream &operator<<(ostream &_out, const PointLight &_p)
 {
     _out << "Light Position: " << _p.light_position << " Color: " << _p.color.r << " " << _p.color.g << " " << _p.color.b;
@@ -468,6 +459,11 @@ Vector3D SpotLight::get_light_direction() const
 double SpotLight::get_cutoff_angle() const
 {
     return cutoff_angle;
+}
+
+void SpotLight::draw()
+{
+    point_light.draw();
 }
 
 ostream &operator<<(ostream &_out, const SpotLight &_s)
