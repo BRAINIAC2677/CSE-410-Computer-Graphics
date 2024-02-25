@@ -19,6 +19,8 @@ ostream &operator<<(ostream &_out, const Color &_c)
     return _out;
 }
 
+Vector3D::Vector3D() : x(0), y(0), z(0) {}
+
 Vector3D::Vector3D(double _x, double _y, double _z) : x(_x), y(_y), z(_z) {}
 
 Vector3D Vector3D::normalize()
@@ -188,21 +190,17 @@ void Object::draw()
     cout << "Object " << *this << endl;
 }
 
-double Object::intersect(Ray *_ray, Color *_color, int _level)
+double Object::intersect(Ray *_ray)
 {
     return -1.0;
 }
 
-double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
+void Object::phong_lighting(Ray *_ray, Color *_color, int _level)
 {
-    double tmin = intersect(_ray, _color, _level);
+    double tmin = intersect(_ray);
     if (tmin < 0)
     {
-        return -1;
-    }
-    if (_level == 0)
-    {
-        return 0;
+        return;
     }
     Vector3D intersection_point = _ray->origin + _ray->direction * tmin;
     Color intersection_point_color = get_color_at(intersection_point);
@@ -211,13 +209,14 @@ double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
     _color->g = intersection_point_color.g * coefficents.ambient;
     _color->b = intersection_point_color.b * coefficents.ambient;
 
+    Ray normal_ray = Ray(intersection_point, get_normal_at(intersection_point));
+    Ray view_ray = *_ray;
+
     // pointlights
     for (PointLight *point_light : pointlights)
     {
         Ray light_ray = Ray(point_light->get_light_position(), intersection_point - point_light->get_light_position());
-        Ray normal_ray = Ray(intersection_point, get_normal_at(intersection_point));
-        Ray reflected_ray = Ray(intersection_point, light_ray.direction - normal_ray.direction * (2 * (light_ray.direction * normal_ray.direction)));
-        Ray view_ray = *_ray;
+        Ray reflected_light_ray = Ray(intersection_point, light_ray.direction - normal_ray.direction * (2 * (light_ray.direction * normal_ray.direction)));
 
         double distance = (point_light->get_light_position() - intersection_point).magnitude();
         if (distance < epsilon)
@@ -228,7 +227,7 @@ double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
         bool obscured = false;
         for (Object *object : objects)
         {
-            double t = object->intersect(&light_ray, &intersection_point_color, 0);
+            double t = object->intersect(&light_ray);
             if (t > 0 && t + epsilon < distance)
             {
                 obscured = true;
@@ -239,7 +238,7 @@ double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
         if (!obscured)
         {
             double diffuse = max(-(light_ray.direction * normal_ray.direction), 0.0);
-            double specular = max(-(reflected_ray.direction * view_ray.direction), 0.0);
+            double specular = max(-(reflected_light_ray.direction * view_ray.direction), 0.0);
 
             // diffuse reflection
             _color->r += point_light->get_color().r * intersection_point_color.r * (coefficents.diffuse * diffuse);
@@ -257,9 +256,7 @@ double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
     for (SpotLight *spot_light : spotlights)
     {
         Ray light_ray = Ray(spot_light->get_light_position(), intersection_point - spot_light->get_light_position());
-        Ray normal_ray = Ray(intersection_point, get_normal_at(intersection_point));
-        Ray reflected_ray = Ray(intersection_point, light_ray.direction - normal_ray.direction * (2 * (light_ray.direction * normal_ray.direction)));
-        Ray view_ray = *_ray;
+        Ray reflected_light_ray = Ray(intersection_point, light_ray.direction - normal_ray.direction * (2 * (light_ray.direction * normal_ray.direction)));
 
         double distance = (spot_light->get_light_position() - intersection_point).magnitude();
         if (distance < epsilon)
@@ -277,7 +274,7 @@ double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
         bool obscured = false;
         for (Object *object : objects)
         {
-            double t = object->intersect(&light_ray, &intersection_point_color, 0);
+            double t = object->intersect(&light_ray);
             if (t > 0 && t + epsilon < distance)
             {
                 obscured = true;
@@ -288,7 +285,7 @@ double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
         if (!obscured)
         {
             double diffuse = max(-(light_ray.direction * normal_ray.direction), 0.0);
-            double specular = max(-(reflected_ray.direction * view_ray.direction), 0.0);
+            double specular = max(-(reflected_light_ray.direction * view_ray.direction), 0.0);
 
             // diffuse reflection
             _color->r += spot_light->get_color().r * intersection_point_color.r * (coefficents.diffuse * diffuse);
@@ -302,14 +299,43 @@ double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
         }
     }
 
+    // recursive reflection
+    if (_level >= recursion_level)
+    {
+        return;
+    }
+ 
+    Ray reflected_view_ray = Ray(intersection_point, view_ray.direction - normal_ray.direction * (2 * (view_ray.direction * normal_ray.direction)));
+    reflected_view_ray.origin += reflected_view_ray.direction * epsilon;
+
+    Color *reflected_color = new Color(0, 0, 0);
+    double tmin2 = -1;
+    Object *nearest_object = nullptr;
+
+    for (auto obj : objects)
+    {
+        double t = obj->intersect(&reflected_view_ray);
+        if ((t > 0) && (t < tmin2 || (nearest_object == nullptr)))
+        {
+            tmin2 = t;
+            nearest_object = obj;
+        }
+    }
+
+    if (nearest_object != nullptr)
+    {
+        nearest_object->phong_lighting(&reflected_view_ray, reflected_color, _level + 1);
+        _color->r += reflected_color->r * coefficents.reflection;
+        _color->g += reflected_color->g * coefficents.reflection;
+        _color->b += reflected_color->b * coefficents.reflection;
+    }
+
     _color->r = min(1.0, _color->r);
     _color->g = min(1.0, _color->g);
     _color->b = min(1.0, _color->b);
     _color->r = max(0.0, _color->r);
     _color->g = max(0.0, _color->g);
     _color->b = max(0.0, _color->b);
-
-    return tmin;
 }
 
 ostream &operator<<(ostream &_out, const Object &_o)
@@ -344,7 +370,7 @@ Vector3D Sphere::get_normal_at(Vector3D _point)
     return normal;
 }
 
-double Sphere::intersect(Ray *_ray, Color *_color, int _level)
+double Sphere::intersect(Ray *_ray)
 {
     _ray->origin -= reference_point;
     double a = 1;
@@ -380,10 +406,10 @@ double Sphere::intersect(Ray *_ray, Color *_color, int _level)
     }
 }
 
-Floor::Floor(double _tile_count, double _tile_size) : Object(), tile_count(_tile_count), tile_size(_tile_size)
+Floor::Floor(double _tile_count, double _tile_size, double _height) : Object(), tile_count(_tile_count), tile_size(_tile_size)
 {
     reference_point = Vector3D(-_tile_count * _tile_size / 2, -_tile_count * _tile_size / 2, 0);
-    height = 0;
+    height = _height;
     width = _tile_count * _tile_size;
     length = _tile_count * _tile_size;
 }
@@ -407,15 +433,103 @@ void Floor::draw()
                     glColor3f(0.0f, 0.0f, 0.0f);
                 }
 
-                glVertex3f(start_x + i * tile_size, start_y + j * tile_size, 0);
-                glVertex3f(start_x + (i + 1) * tile_size, start_y + j * tile_size, 0);
-                glVertex3f(start_x + (i + 1) * tile_size, start_y + (j + 1) * tile_size, 0);
-                glVertex3f(start_x + i * tile_size, start_y + (j + 1) * tile_size, 0);
+                glVertex3f(start_x + i * tile_size, start_y + j * tile_size,height);
+                glVertex3f(start_x + (i + 1) * tile_size, start_y + j * tile_size, height);
+                glVertex3f(start_x + (i + 1) * tile_size, start_y + (j + 1) * tile_size, height);   
+                glVertex3f(start_x + i * tile_size, start_y + (j + 1) * tile_size, height);
             }
         }
     }
     glEnd();
 }
+
+Vector3D Floor::get_normal_at(Vector3D _point)
+{
+    return Vector3D(0, 0, 1);
+}
+
+double Floor::intersect(Ray *_ray)
+{
+    double t = (height - _ray->origin.z) / _ray->direction.z;
+    if (t < 0)
+    {
+        return -1.0;
+    }
+    Vector3D intersection_point = _ray->origin + _ray->direction * t;
+    if (intersection_point.x < reference_point.x || intersection_point.x > reference_point.x + width || intersection_point.y < reference_point.y || intersection_point.y > reference_point.y + length)
+    {
+        return -1.0;
+    }
+    return t;
+}
+
+Color Floor::get_color_at(Vector3D _point)
+{
+    int x = (_point.x - reference_point.x) / tile_size;
+    int y = (_point.y - reference_point.y) / tile_size;
+    if ((x + y) % 2 == 0)
+    {
+        return Color(1, 1, 1);
+    }
+    else
+    {
+        return Color(0, 0, 0);
+    }
+}
+
+Triangle::Triangle(Vector3D _a, Vector3D _b, Vector3D _c) : Object(), a(_a), b(_b), c(_c)
+{
+    Vector3D normal = (b - a) ^ (c - a);
+    normal.normalize();
+    reference_point = a;
+    height = normal.x;
+    width = normal.y;
+    length = normal.z;
+}
+
+void Triangle::draw()
+{
+    glBegin(GL_TRIANGLES);
+    {
+        glColor3f(color.r, color.g, color.b);
+        glVertex3f(a.x, a.y, a.z);
+        glVertex3f(b.x, b.y, b.z);
+        glVertex3f(c.x, c.y, c.z);
+    }
+    glEnd();
+}
+
+Vector3D Triangle::get_normal_at(Vector3D _point)
+{
+    Vector3D normal = (b - a) ^ (c - a);
+    normal.normalize();
+    return normal;
+}
+
+double Triangle::intersect(Ray *_ray)
+{
+    Vector3D normal = get_normal_at(reference_point);
+    double denominator = normal * _ray->direction;
+    if (fabs(denominator) < epsilon)
+    {
+        return -1.0;
+    }
+    double t = ((reference_point - _ray->origin) * normal) / denominator;
+    if (t < 0)
+    {
+        return -1.0;
+    }
+    Vector3D intersection_point = _ray->origin + _ray->direction * t;
+    Vector3D c0 = (b - a) ^ (intersection_point - a);
+    Vector3D c1 = (c - b) ^ (intersection_point - b);
+    Vector3D c2 = (a - c) ^ (intersection_point - c);
+    if ((c0 * c1 >= 0) && (c1 * c2 >= 0))
+    {
+        return t;
+    }
+    return -1.0;
+}
+
 
 PointLight::PointLight() : light_position(0, 0, 0)
 {

@@ -37,6 +37,7 @@ void capture();
 void load_objects(ifstream &_in)
 {
     Floor *checkered_floor = new Floor(tile_count, tile_size);
+    checkered_floor->set_coefficients(Coefficients(0.4, 0.2, 0.2, 0.2));
     objects.push_back(checkered_floor);
 
     int n_objects;
@@ -55,7 +56,10 @@ void load_objects(ifstream &_in)
         }
         else if (type == "triangle")
         {
-            // todo:
+            Vector3D a, b, c;
+            _in >> a.x >> a.y >> a.z >> b.x >> b.y >> b.z >> c.x >> c.y >> c.z;
+            Triangle *t = new Triangle(a, b, c);
+            obj = t;
         }
         else if (type == "general")
         {
@@ -363,7 +367,7 @@ void capture()
 
             for (auto obj : objects)
             {
-                double t = obj->intersect(ray, color, 0);
+                double t = obj->intersect(ray);
                 if ((t > 0) && (t < tmin || (nearest_object == nullptr)))
                 {
                     tmin = t;
@@ -373,7 +377,7 @@ void capture()
 
             if (nearest_object != nullptr)
             {
-                nearest_object->phong_lighting(ray, color, 1);
+                nearest_object->phong_lighting(ray, color, 0);
                 color->r = round(color->r * 255);
                 color->g = round(color->g * 255);
                 color->b = round(color->b * 255);

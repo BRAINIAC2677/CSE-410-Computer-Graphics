@@ -24,6 +24,7 @@ class Vector3D
 {
 public:
     double x, y, z;
+    Vector3D();
     Vector3D(double _x, double _y, double _z);
 
     Vector3D normalize();
@@ -68,12 +69,12 @@ public:
     Object set_color(Color _color);
     Object set_shine(int _shine);
     Object set_coefficients(Coefficients _coefficients);
-    Color get_color_at(Vector3D _point);
     Coefficients get_coefficients();
+    virtual Color get_color_at(Vector3D _point);
     virtual Vector3D get_normal_at(Vector3D _point);
     virtual void draw();
-    virtual double intersect(Ray *_ray, Color *_color, int _level);
-    double phong_lighting(Ray *_ray, Color *_color, int _level);
+    virtual double intersect(Ray *_ray);
+    void phong_lighting(Ray *_ray, Color *_color, int _level);
     friend ostream &operator<<(ostream &_out, const Object &_o);
 };
 
@@ -83,7 +84,7 @@ public:
     Sphere(Vector3D _center, double _radius);
     void draw();
     Vector3D get_normal_at(Vector3D _point);
-    double intersect(Ray *_ray, Color *_color, int _level);
+    double intersect(Ray *_ray);
 };
 
 class Floor : public Object
@@ -91,9 +92,23 @@ class Floor : public Object
     double tile_count, tile_size;
 
 public:
-    Floor(double _tile_count, double _tile_size);
+    Floor(double _tile_count, double _tile_size, double _height = 0);
     void draw();
+    Vector3D get_normal_at(Vector3D _point);
+    double intersect(Ray *_ray);
+    Color get_color_at(Vector3D _point);
 };
+
+class Triangle : public Object
+{
+    Vector3D a, b, c;
+    public:
+    Triangle(Vector3D _a, Vector3D _b, Vector3D _c);
+    void draw();
+    Vector3D get_normal_at(Vector3D _point);
+    double intersect(Ray *_ray);
+};
+
 
 // todo: triangle class, object shape having general quadratic equation
 
@@ -134,6 +149,7 @@ public:
 };
 
 extern double epsilon;
+extern double recursion_level;
 extern vector<Object *> objects;
 extern vector<PointLight *> pointlights;
 extern vector<SpotLight *> spotlights;
