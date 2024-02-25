@@ -137,3 +137,6 @@ extern double epsilon;
 extern vector<Object *> objects;
 extern vector<PointLight *> pointlights;
 extern vector<SpotLight *> spotlights;
+
+double degree_to_radian(double _degree);
+double radian_to_degree(double _radian);

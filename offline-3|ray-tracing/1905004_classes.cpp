@@ -211,6 +211,7 @@ double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
     _color->g = intersection_point_color.g * coefficents.ambient;
     _color->b = intersection_point_color.b * coefficents.ambient;
 
+    // pointlights
     for (PointLight *point_light : pointlights)
     {
         Ray light_ray = Ray(point_light->get_light_position(), intersection_point - point_light->get_light_position());
@@ -249,15 +250,65 @@ double Object::phong_lighting(Ray *_ray, Color *_color, int _level)
             _color->r += point_light->get_color().r * intersection_point_color.r * (coefficents.specular * pow(specular, shine));
             _color->g += point_light->get_color().g * intersection_point_color.g * (coefficents.specular * pow(specular, shine));
             _color->b += point_light->get_color().b * intersection_point_color.b * (coefficents.specular * pow(specular, shine));
-
-            _color->r = min(1.0, _color->r);
-            _color->g = min(1.0, _color->g);
-            _color->b = min(1.0, _color->b);
-            _color->r = max(0.0, _color->r);
-            _color->g = max(0.0, _color->g);
-            _color->b = max(0.0, _color->b);
         }
     }
+
+    // spotlights
+    for (SpotLight *spot_light : spotlights)
+    {
+        Ray light_ray = Ray(spot_light->get_light_position(), intersection_point - spot_light->get_light_position());
+        Ray normal_ray = Ray(intersection_point, get_normal_at(intersection_point));
+        Ray reflected_ray = Ray(intersection_point, light_ray.direction - normal_ray.direction * (2 * (light_ray.direction * normal_ray.direction)));
+        Ray view_ray = *_ray;
+
+        double distance = (spot_light->get_light_position() - intersection_point).magnitude();
+        if (distance < epsilon)
+        {
+            continue;
+        }
+
+        double beta = acos(light_ray.direction * spot_light->get_light_direction());
+        beta = radian_to_degree(beta);
+        if (fabs(beta) > spot_light->get_cutoff_angle())
+        {
+            continue;
+        }
+
+        bool obscured = false;
+        for (Object *object : objects)
+        {
+            double t = object->intersect(&light_ray, &intersection_point_color, 0);
+            if (t > 0 && t + epsilon < distance)
+            {
+                obscured = true;
+                break;
+            }
+        }
+
+        if (!obscured)
+        {
+            double diffuse = max(-(light_ray.direction * normal_ray.direction), 0.0);
+            double specular = max(-(reflected_ray.direction * view_ray.direction), 0.0);
+
+            // diffuse reflection
+            _color->r += spot_light->get_color().r * intersection_point_color.r * (coefficents.diffuse * diffuse);
+            _color->g += spot_light->get_color().g * intersection_point_color.g * (coefficents.diffuse * diffuse);
+            _color->b += spot_light->get_color().b * intersection_point_color.b * (coefficents.diffuse * diffuse);
+
+            // specular reflection
+            _color->r += spot_light->get_color().r * intersection_point_color.r * (coefficents.specular * pow(specular, shine));
+            _color->g += spot_light->get_color().g * intersection_point_color.g * (coefficents.specular * pow(specular, shine));
+            _color->b += spot_light->get_color().b * intersection_point_color.b * (coefficents.specular * pow(specular, shine));
+        }
+    }
+
+    _color->r = min(1.0, _color->r);
+    _color->g = min(1.0, _color->g);
+    _color->b = min(1.0, _color->b);
+    _color->r = max(0.0, _color->r);
+    _color->g = max(0.0, _color->g);
+    _color->b = max(0.0, _color->b);
+
     return tmin;
 }
 
@@ -412,7 +463,10 @@ ostream &operator<<(ostream &_out, const PointLight &_p)
     return _out;
 }
 
-SpotLight::SpotLight() : light_direction(0, 0, 0), cutoff_angle(0) {}
+SpotLight::SpotLight() : light_direction(1, 1, 1), cutoff_angle(0)
+{
+    light_direction.normalize();
+}
 
 SpotLight SpotLight::set_light_position(double _x, double _y, double _z)
 {
@@ -470,4 +524,14 @@ ostream &operator<<(ostream &_out, const SpotLight &_s)
 {
     cout << _s.point_light << " Direction: " << _s.light_direction << " Cutoff Angle: " << _s.cutoff_angle;
     return _out;
+}
+
+double degree_to_radian(double _degree)
+{
+    return _degree * M_PI / 180;
+}
+
+double radian_to_degree(double _radian)
+{
+    return _radian * 180 / M_PI;
 }

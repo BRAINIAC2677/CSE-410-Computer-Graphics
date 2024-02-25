@@ -32,7 +32,6 @@ vector<Object *> objects;
 vector<PointLight *> pointlights;
 vector<SpotLight *> spotlights;
 
-double degree_to_radian(double _degree);
 void capture();
 
 void load_objects(ifstream &_in)
@@ -332,11 +331,6 @@ int main(int argc, char **argv)
     glutMainLoop();
 
     return 0;
-}
-
-double degree_to_radian(double _degree)
-{
-    return _degree * 2 * acos(0) / 180.0;
 }
 
 void capture()
