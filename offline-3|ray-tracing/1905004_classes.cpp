@@ -530,6 +530,102 @@ double Triangle::intersect(Ray *_ray)
     return -1.0;
 }
 
+bool General::inside_bounding_box(Vector3D _point)
+{
+    if(fabs(width)> epsilon) 
+    {
+        if(_point.x < reference_point.x || _point.x > reference_point.x + width) 
+        {
+            return false;
+        }
+    }
+    if(fabs(height) > epsilon) 
+    {
+        if(_point.y < reference_point.y || _point.y > reference_point.y + height) 
+        {
+            return false;
+        }
+    }
+    if(fabs(length) > epsilon) 
+    {
+        if(_point.z < reference_point.z || _point.z > reference_point.z + length) 
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+General::General(double _a, double _b, double _c, double _d, double _e, double _f, double _g, double _h, double _i, double _j) : Object(), a(_a), b(_b), c(_c), d(_d), e(_e), f(_f), g(_g), h(_h), i(_i), j(_j)
+{
+}
+
+void General::set_bounding_box(Vector3D _reference_point, double _height, double _width, double _length)
+{
+    reference_point = _reference_point;
+    height = _height;
+    width = _width;
+    length = _length;
+}
+
+void General::draw()
+{
+    return;
+}
+
+Vector3D General::get_normal_at(Vector3D _point)
+{
+    double x = 2 * a * _point.x + d * _point.y + e * _point.z + g;
+    double y = 2 * b * _point.y + d * _point.x + f * _point.z + h;
+    double z = 2 * c * _point.z + e * _point.x + f * _point.y + i;
+    return Vector3D(x, y, z);
+}
+
+double General::intersect(Ray *_ray)
+{
+    double A = a * _ray->direction.x * _ray->direction.x + b * _ray->direction.y * _ray->direction.y + c * _ray->direction.z * _ray->direction.z + d * _ray->direction.x * _ray->direction.y + e * _ray->direction.y * _ray->direction.z + f * _ray->direction.z * _ray->direction.x;
+    double B = 2 * (a * _ray->direction.x * _ray->origin.x + b * _ray->direction.y * _ray->origin.y + c * _ray->direction.z * _ray->origin.z) + d * (_ray->direction.x * _ray->origin.y + _ray->direction.y * _ray->origin.x) + e * (_ray->direction.y * _ray->origin.z + _ray->direction.z * _ray-> origin.y) + f * (_ray->direction.z * _ray->origin.x + _ray->direction.x * _ray->origin.z) + g * _ray->direction.x + h * _ray->direction.y + i * _ray->direction.z;
+    double C = a * _ray->origin.x * _ray->origin.x + b * _ray->origin.y * _ray->origin.y + c * _ray->origin.z * _ray->origin.z + d * _ray->origin.x * _ray->origin.y + e * _ray->origin.y * _ray->origin.z + f * _ray->origin.z * _ray->origin.x + g * _ray->origin.x + h * _ray->origin.y + i * _ray->origin.z + j;
+    double discriminant = B * B - 4 * A * C;
+    if (discriminant < 0)
+    {
+        return -1.0;
+    }
+    else
+    {
+        double t1 = (-B + sqrt(discriminant)) / (2 * A);
+        double t2 = (-B - sqrt(discriminant)) / (2 * A);
+        if(t1 > t2)
+        {
+            swap(t1, t2);
+        }
+        Vector3D intersection_point1 = _ray->origin + _ray->direction * t1;
+        Vector3D intersection_point2 = _ray->origin + _ray->direction * t2;
+        // t1 < 0 and t2 < 0
+        if(t2 < 0)
+        {
+            return -1.0;
+        }
+        // t1 < 0 and t2 > 0
+        else if(t1 < 0)
+        {
+            return t2;
+        }
+        // t1 > 0 and t2 > 0
+        else
+        {
+            if(inside_bounding_box(intersection_point1))
+            {
+                return t1;
+            }
+            if(inside_bounding_box(intersection_point2))
+            {
+                return t2;
+            }
+        }
+        return -1.0;
+    }
+}
 
 PointLight::PointLight() : light_position(0, 0, 0)
 {

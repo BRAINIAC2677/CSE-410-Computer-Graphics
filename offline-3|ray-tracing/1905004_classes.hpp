@@ -109,8 +109,17 @@ class Triangle : public Object
     double intersect(Ray *_ray);
 };
 
-
-// todo: triangle class, object shape having general quadratic equation
+class General: public Object
+{
+    double a, b, c, d, e, f, g, h, i, j;
+    bool inside_bounding_box(Vector3D _point);
+    public:
+    General(double _a, double _b, double _c, double _d, double _e, double _f, double _g, double _h, double _i, double _j);
+    void set_bounding_box(Vector3D _reference_point, double _height, double _width, double _length);
+    void draw();
+    Vector3D get_normal_at(Vector3D _point);
+    double intersect(Ray *_ray);
+};
 
 class PointLight
 {

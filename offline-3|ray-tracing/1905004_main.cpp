@@ -18,7 +18,7 @@ double fovy = 45, znear = 1, zfar = 500;
 double camera_change = 5;
 double camera_angle_change = 10;
 
-Vector3D camera_pos = Vector3D(200, 200, 50);
+Vector3D camera_pos = Vector3D(300, 300, 200);
 Vector3D camera_up = Vector3D(0, 0, 1);
 Vector3D camera_look = Vector3D(-1 / sqrt(2), -1 / sqrt(2), 0);
 Vector3D camera_right = Vector3D(-1 / sqrt(2), 1 / sqrt(2), 0);
@@ -63,7 +63,14 @@ void load_objects(ifstream &_in)
         }
         else if (type == "general")
         {
-            // todo:
+            double a, b, c, d, e, f, g, h, i, j;
+            _in >> a >> b >> c >> d >> e >> f >> g >> h >> i >> j;
+            General *general = new General(a, b, c, d, e, f, g, h, i, j);
+            Vector3D reference_point;
+            double height, width, length;
+            _in >> reference_point.x >> reference_point.y >> reference_point.z >> height >> width >> length;
+            general->set_bounding_box(reference_point, height, width, length);
+            obj = general;
         }
 
         double r, g, b;
@@ -317,6 +324,7 @@ int main(int argc, char **argv)
 {
 
     load_data("ios/scene_test-1.txt");
+    print_inputs();
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(window_width, window_height);
