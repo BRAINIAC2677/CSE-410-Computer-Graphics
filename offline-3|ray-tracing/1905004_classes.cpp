@@ -336,6 +336,8 @@ void Object::phong_lighting(Ray *_ray, Color *_color, int _level)
     _color->r = max(0.0, _color->r);
     _color->g = max(0.0, _color->g);
     _color->b = max(0.0, _color->b);
+
+    delete reflected_color;
 }
 
 ostream &operator<<(ostream &_out, const Object &_o)

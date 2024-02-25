@@ -18,7 +18,7 @@ double fovy = 45, znear = 1, zfar = 500;
 double camera_change = 5;
 double camera_angle_change = 10;
 
-Vector3D camera_pos = Vector3D(200, 200, 200);
+Vector3D camera_pos = Vector3D(200, 200, 100);
 Vector3D camera_up = Vector3D(0, 0, 1);
 Vector3D camera_look = Vector3D(-1 / sqrt(2), -1 / sqrt(2), 0);
 Vector3D camera_right = Vector3D(-1 / sqrt(2), 1 / sqrt(2), 0);
@@ -320,6 +320,22 @@ void idle()
     glutPostRedisplay();
 }
 
+void free_memory()
+{
+    for (int i = 0; i < objects.size(); i++)
+    {
+        delete objects[i];
+    }
+    for (int i = 0; i < pointlights.size(); i++)
+    {
+        delete pointlights[i];
+    }
+    for (int i = 0; i < spotlights.size(); i++)
+    {
+        delete spotlights[i];
+    }
+}
+
 int main(int argc, char **argv)
 {
 
@@ -339,8 +355,8 @@ int main(int argc, char **argv)
     glutIdleFunc(idle);
 
     init();
-
     glutMainLoop();
+    free_memory();
 
     return 0;
 }
@@ -391,6 +407,8 @@ void capture()
                 color->b = round(color->b * 255);
                 image.set_pixel(i, j, color->r, color->g, color->b);
             }
+            delete ray;
+            delete color;
         }
     }
 
