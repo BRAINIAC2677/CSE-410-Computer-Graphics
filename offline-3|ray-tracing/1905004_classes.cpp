@@ -12,6 +12,19 @@ using namespace std;
 #endif
 
 double epsilon = 1e-6;
+double recursion_level = 1;
+double fovy = 45, znear = 1, zfar = 700;
+vector<Object *> objects;
+vector<PointLight *> pointlights;
+vector<SpotLight *> spotlights;
+
+double camera_change = 5;
+double camera_angle_change = 10;
+
+Vector3D camera_pos = Vector3D(0, 300, 300);
+Vector3D camera_up = Vector3D(0, -1, 1);
+Vector3D camera_look = Vector3D(0, -1, -1);
+Vector3D camera_right = Vector3D();
 
 ostream &operator<<(ostream &_out, const Color &_c)
 {
@@ -322,6 +335,14 @@ void Object::phong_lighting(Ray *_ray, Color *_color, int _level)
         }
     }
 
+    // check if the intersection point is inside zfar and znear
+    Vector3D intersection_point2 = reflected_view_ray.origin + reflected_view_ray.direction * tmin2;
+    double t_along_look = (intersection_point2 - camera_pos) * camera_look;
+    if(t_along_look < znear || t_along_look > zfar)
+    {
+        nearest_object = nullptr;
+    }
+
     if (nearest_object != nullptr)
     {
         nearest_object->phong_lighting(&reflected_view_ray, reflected_color, _level + 1);
@@ -387,24 +408,26 @@ double Sphere::intersect(Ray *_ray)
     }
     else
     {
+        double t;
         double t1 = (-b + sqrt(discriminant)) / 2 * a;
         double t2 = (-b - sqrt(discriminant)) / 2 * a;
         if (t1 > 0 && t2 > 0)
         {
-            return min(t1, t2);
+            t = min(t1, t2);
         }
         else if (t1 > 0)
         {
-            return t1;
+            t = t1;
         }
         else if (t2 > 0)
         {
-            return t2;
+            t = t2;
         }
         else
         {
-            return -1.0;
+            t = -1.0;
         }
+        return t;
     }
 }
 
@@ -414,6 +437,8 @@ Floor::Floor(double _tile_count, double _tile_size, double _height) : Object(), 
     height = _height;
     width = _tile_count * _tile_size;
     length = _tile_count * _tile_size;
+    tile_color1 = Color(1, 1, 1);
+    tile_color2 = Color(0, 0, 0);
 }
 
 void Floor::draw()
@@ -428,11 +453,11 @@ void Floor::draw()
             {
                 if ((i + j) % 2 == 0)
                 {
-                    glColor3f(1.0f, 1.0f, 1.0f);
+                    glColor3f(tile_color1.r, tile_color1.g, tile_color1.b);
                 }
                 else
                 {
-                    glColor3f(0.0f, 0.0f, 0.0f);
+                    glColor3f(tile_color2.r, tile_color2.g, tile_color2.b);
                 }
 
                 glVertex3f(start_x + i * tile_size, start_y + j * tile_size,height);
@@ -471,11 +496,11 @@ Color Floor::get_color_at(Vector3D _point)
     int y = (_point.y - reference_point.y) / tile_size;
     if ((x + y) % 2 == 0)
     {
-        return Color(1, 1, 1);
+        return tile_color1;
     }
     else
     {
-        return Color(0, 0, 0);
+        return tile_color2;
     }
 }
 
@@ -747,3 +772,9 @@ double radian_to_degree(double _radian)
 {
     return _radian * 180 / M_PI;
 }
+
+void rotate3D(Vector3D &_vec, Vector3D &_axis, double _angle)
+{
+    _vec = _vec * cos(degree_to_radian(_angle)) + (_axis.normalize() ^ _vec) * sin(degree_to_radian(_angle));
+}
+

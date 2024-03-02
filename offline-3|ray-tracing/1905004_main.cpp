@@ -14,23 +14,10 @@ double window_width, window_height;
 double image_width, image_height;
 double window_position_x = 100, window_position_y = 100;
 
-double fovy = 45, znear = 1, zfar = 500;
-double camera_change = 5;
-double camera_angle_change = 10;
-
-Vector3D camera_pos = Vector3D(200, 200, 100);
-Vector3D camera_up = Vector3D(0, 0, 1);
-Vector3D camera_look = Vector3D(-1 / sqrt(2), -1 / sqrt(2), 0);
-Vector3D camera_right = Vector3D(-1 / sqrt(2), 1 / sqrt(2), 0);
-
 double tile_count = 100, tile_size = 20;
 
 int capture_count = 0;
-
-double recursion_level = 1;
-vector<Object *> objects;
-vector<PointLight *> pointlights;
-vector<SpotLight *> spotlights;
+string output_file_dir;
 
 void capture();
 
@@ -38,6 +25,9 @@ void load_objects(ifstream &_in)
 {
     Floor *checkered_floor = new Floor(tile_count, tile_size);
     checkered_floor->set_coefficients(Coefficients(0.4, 0.2, 0.2, 0.2));
+    checkered_floor->height = 0;
+    checkered_floor->tile_color1 = Color(1, 1, 1);
+    checkered_floor->tile_color2 = Color(0, 0, 0);
     objects.push_back(checkered_floor);
 
     int n_objects;
@@ -177,6 +167,7 @@ void init()
 
     camera_look.normalize();
     camera_up.normalize();
+    camera_right = camera_look ^ camera_up;
     camera_right.normalize();
 }
 
@@ -235,11 +226,6 @@ void reshape(int _width, int _height)
     glLoadIdentity();
 }
 
-void rotate3D(Vector3D &_vec, Vector3D &_axis, double _angle)
-{
-    _vec = _vec * cos(degree_to_radian(_angle)) + (_axis.normalize() ^ _vec) * sin(degree_to_radian(_angle));
-}
-
 void keyboard_listener(unsigned char _key, int _x, int _y)
 {
     switch (_key)
@@ -277,6 +263,9 @@ void keyboard_listener(unsigned char _key, int _x, int _y)
         rotate3D(camera_up, camera_look, -camera_angle_change);
         rotate3D(camera_right, camera_look, -camera_angle_change);
         break;
+    case 'q':
+        // quit
+        exit(0);
     default:
         break;
     }
@@ -336,11 +325,18 @@ void free_memory()
     }
 }
 
+
 int main(int argc, char **argv)
 {
+    if (argc < 3)
+    {
+        cout << "usage: <exe_file_name> <input_file_path> <output_file_dir>" << endl;
+        return 0;
+    }
 
-    load_data("ios/scene_test-1.txt");
-    print_inputs();
+    string input_file_path = argv[1];
+    output_file_dir = argv[2];
+    load_data(input_file_path);
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(window_width, window_height);
@@ -381,7 +377,7 @@ void capture()
         {
             Vector3D current_pixel = top_left + (camera_right * i * du) - (camera_up * j * dv);
 
-            Vector3D ray_vector = current_pixel - camera_pos;
+            Vector3D ray_vector = (current_pixel - camera_pos).normalize();
 
             Ray *ray = new Ray(camera_pos, ray_vector);
 
@@ -399,6 +395,14 @@ void capture()
                 }
             }
 
+            // check if the intersection point is inside zfar
+            Vector3D intersection_point = camera_pos + (ray_vector * tmin);
+            double t_along_look = (intersection_point - camera_pos) * camera_look;
+
+            if(t_along_look > zfar || t_along_look < znear){
+                nearest_object = nullptr;
+            }
+
             if (nearest_object != nullptr)
             {
                 nearest_object->phong_lighting(ray, color, 0);
@@ -413,5 +417,6 @@ void capture()
     }
 
     capture_count++;
-    image.save_image("output/capture-" + to_string(capture_count) + ".bmp");
+    image.save_image(output_file_dir + "/capture-" + to_string(capture_count) + ".bmp");
+    cout << "Capture saved as capture-" << capture_count << ".bmp" << endl;
 }

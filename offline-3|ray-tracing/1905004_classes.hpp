@@ -59,12 +59,13 @@ class Object
 {
 protected:
     Vector3D reference_point;
-    double height, width, length;
     Color color;
     Coefficients coefficents;
     int shine;
 
 public:
+    double height, width, length;
+
     Object();
     Object set_color(Color _color);
     Object set_shine(int _shine);
@@ -92,6 +93,7 @@ class Floor : public Object
     double tile_count, tile_size;
 
 public:
+    Color tile_color1, tile_color2;
     Floor(double _tile_count, double _tile_size, double _height = 0);
     void draw();
     Vector3D get_normal_at(Vector3D _point);
@@ -159,9 +161,19 @@ public:
 
 extern double epsilon;
 extern double recursion_level;
+extern double fovy, znear, zfar;
 extern vector<Object *> objects;
 extern vector<PointLight *> pointlights;
 extern vector<SpotLight *> spotlights;
 
+extern double camera_change;
+extern double camera_angle_change;
+
+extern Vector3D camera_pos;
+extern Vector3D camera_up;
+extern Vector3D camera_look;
+extern Vector3D camera_right;
+
 double degree_to_radian(double _degree);
 double radian_to_degree(double _radian);
+void rotate3D(Vector3D &_vec, Vector3D &_axis, double _angle);
