@@ -325,7 +325,6 @@ void free_memory()
     }
 }
 
-
 int main(int argc, char **argv)
 {
     if (argc < 3)
@@ -399,7 +398,8 @@ void capture()
             Vector3D intersection_point = camera_pos + (ray_vector * tmin);
             double t_along_look = (intersection_point - camera_pos) * camera_look;
 
-            if(t_along_look > zfar || t_along_look < znear){
+            if (t_along_look > zfar || t_along_look < znear)
+            {
                 nearest_object = nullptr;
             }
 

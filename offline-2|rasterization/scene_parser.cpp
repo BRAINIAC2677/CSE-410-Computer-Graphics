@@ -1,17 +1,20 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-vector<string> split(string line, char delim) {
+vector<string> split(string line, char delim)
+{
   vector<string> tokens;
   stringstream ss(line);
   string token;
-  while (getline(ss, token, delim)) {
+  while (getline(ss, token, delim))
+  {
     tokens.push_back(token);
   }
   return tokens;
 }
 
-void gen_init(ofstream &_output_file) {
+void gen_init(ofstream &_output_file)
+{
   _output_file << "#include<bits/stdc++.h>" << endl;
   _output_file << "using namespace std;" << endl;
   _output_file << "\n#include \"libgg.hpp\"" << endl;
@@ -23,7 +26,8 @@ void gen_init(ofstream &_output_file) {
   _output_file << "  ofstream z_buffer(\"z_buffer.txt\");" << endl;
 }
 
-void gen_end(ofstream &_output_file) {
+void gen_end(ofstream &_output_file)
+{
   _output_file << "  ggSaveImage(\"out.bmp\");" << endl;
   _output_file << "  ggPrintTriangles(0, out1);" << endl;
   _output_file << "  ggPrintTriangles(1, out2);" << endl;
@@ -33,10 +37,12 @@ void gen_end(ofstream &_output_file) {
   _output_file << "}" << endl;
 }
 
-void gen_camera(ifstream &_input_file, ofstream &_output_file) {
+void gen_camera(ifstream &_input_file, ofstream &_output_file)
+{
   vector<vector<string>> tokens(3, vector<string>(3));
   string line;
-  for(int i = 0; i< 3; i++) {
+  for (int i = 0; i < 3; i++)
+  {
     getline(_input_file, line);
     line.erase(line.find_last_not_of(" \n\r\t") + 1);
     tokens[i] = split(line, ' ');
@@ -47,7 +53,8 @@ void gen_camera(ifstream &_input_file, ofstream &_output_file) {
                << tokens[2][1] << ", " << tokens[2][2] << ");" << endl;
 }
 
-void gen_perspective(ifstream &_input_file, ofstream &_output_file) {
+void gen_perspective(ifstream &_input_file, ofstream &_output_file)
+{
   string line;
   getline(_input_file, line);
   line.erase(line.find_last_not_of(" \n\r\t") + 1);
@@ -57,18 +64,22 @@ void gen_perspective(ifstream &_input_file, ofstream &_output_file) {
                << tokens[2] << ", " << tokens[3] << ");" << endl;
 }
 
-void gen_triangle(ifstream &_input_file, ofstream &_output_file) {
+void gen_triangle(ifstream &_input_file, ofstream &_output_file)
+{
   string line;
   string vertex[3];
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 3; i++)
+  {
     getline(_input_file, line);
     line.erase(line.find_last_not_of(" \n\r\t") + 1);
 
     vertex[i] = "{";
     vector<string> tokens = split(line, ' ');
-    for (int j = 0; j < 3; j++) {
+    for (int j = 0; j < 3; j++)
+    {
       vertex[i] += tokens[j];
-      if (j != 2) {
+      if (j != 2)
+      {
         vertex[i] += ", ";
       }
     }
@@ -78,7 +89,8 @@ void gen_triangle(ifstream &_input_file, ofstream &_output_file) {
                << vertex[2] << ");" << endl;
 }
 
-void gen_translate(ifstream &_input_file, ofstream &_output_file) {
+void gen_translate(ifstream &_input_file, ofstream &_output_file)
+{
   string line;
   getline(_input_file, line);
   line.erase(line.find_last_not_of(" \n\r\t") + 1);
@@ -88,7 +100,8 @@ void gen_translate(ifstream &_input_file, ofstream &_output_file) {
                << tokens[2] << ");" << endl;
 }
 
-void gen_scale(ifstream &_input_file, ofstream &_output_file) {
+void gen_scale(ifstream &_input_file, ofstream &_output_file)
+{
   string line;
   getline(_input_file, line);
   line.erase(line.find_last_not_of(" \n\r\t") + 1);
@@ -97,7 +110,8 @@ void gen_scale(ifstream &_input_file, ofstream &_output_file) {
                << tokens[2] << ");" << endl;
 }
 
-void gen_rotate(ifstream &_input_file, ofstream &_output_file) {
+void gen_rotate(ifstream &_input_file, ofstream &_output_file)
+{
   string line;
   getline(_input_file, line);
   line.erase(line.find_last_not_of(" \n\r\t") + 1);
@@ -106,16 +120,20 @@ void gen_rotate(ifstream &_input_file, ofstream &_output_file) {
                << tokens[2] << ", " << tokens[3] << ");" << endl;
 }
 
-void gen_push(ofstream &_output_file) {
+void gen_push(ofstream &_output_file)
+{
   _output_file << "  ggPushMatrix();" << endl;
 }
 
-void gen_pop(ofstream &_output_file) {
+void gen_pop(ofstream &_output_file)
+{
   _output_file << "  ggPopMatrix();" << endl;
 }
 
-int main(int argc, char *argv[]) {
-  if (argc != 4) {
+int main(int argc, char *argv[])
+{
+  if (argc != 4)
+  {
     cerr << "Usage: ./scene_parser <input_scene_file_name> <input_config_file_name> <output_file_name>"
          << endl;
     return 1;
@@ -129,29 +147,43 @@ int main(int argc, char *argv[]) {
 
   string line;
   gen_init(output_file);
-  getline(input_config_file, line); 
+  getline(input_config_file, line);
   line.erase(line.find_last_not_of(" \n\r\t") + 1);
   vector<string> tokens = split(line, ' ');
   output_file << "  ggInit(" << tokens[0] << ", " << tokens[1] << ");" << endl;
   gen_camera(input_scene_file, output_file);
   gen_perspective(input_scene_file, output_file);
 
-  while (getline(input_scene_file, line)) {
+  while (getline(input_scene_file, line))
+  {
     line.erase(line.find_last_not_of(" \n\r\t") + 1);
     // todo: parse the first 4 lines
-    if (line == "triangle") {
+    if (line == "triangle")
+    {
       gen_triangle(input_scene_file, output_file);
-    } else if (line == "translate") {
+    }
+    else if (line == "translate")
+    {
       gen_translate(input_scene_file, output_file);
-    } else if (line == "scale") {
+    }
+    else if (line == "scale")
+    {
       gen_scale(input_scene_file, output_file);
-    } else if (line == "rotate") {
+    }
+    else if (line == "rotate")
+    {
       gen_rotate(input_scene_file, output_file);
-    } else if (line == "push") {
+    }
+    else if (line == "push")
+    {
       gen_push(output_file);
-    } else if (line == "pop") {
+    }
+    else if (line == "pop")
+    {
       gen_pop(output_file);
-    } else if (line == "end") {
+    }
+    else if (line == "end")
+    {
       gen_end(output_file);
       break;
     }

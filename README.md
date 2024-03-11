@@ -2,7 +2,10 @@
 
 This repository contains my implementations of the assignments of the course CSE-410: Computer Graphics by BUET.
 
+
 - ## Offline-1 | OpenGL
+    <img src="/assets/magic-cube.png" alt="Magic Cube" width="500"/>
+
     - [Problem Specification](/offline-1|opengl/problem_spec.pdf)
     - ### How To Run?
         - enter into offline-1|opengl directory
@@ -21,6 +24,8 @@ This repository contains my implementations of the assignments of the course CSE
 
 
 - ## Offline-2 | Rasterization
+    <img src="/assets/rasterized.bmp" alt="rasterized" width="500"/>
+
     - [Problem Specification](/offline-2|rasterization/problem_spec.pdf)
     - ### How To Run?
         - enter into offline-2|rasterization directory
@@ -41,3 +46,18 @@ This repository contains my implementations of the assignments of the course CSE
         - [libgg.cpp](/offline-2|rasterization/libgg.cpp) - implementation of libgg library
         - [scene_parser.cpp](/offline-2|rasterization/scene_parser.cpp) - parse scene.txt and config.txt files and generate c++ code with libgg library
         
+- ## Offline-3 | Ray Tracing
+    <img src="/assets/ray-traced.bmp" alt="raytraced" width="500"/>
+
+    - [Problem Specification](/offline-3|ray-tracing/problem_spec.pdf)
+    - How To Run?
+        - enter into offline-3|ray-tracing directory
+        - run the following command
+            ```bash
+            ./build_and_run.sh <input_file_path> <output_file_directory>
+            ``` 
+            e.g.
+            ```bash
+            ./build_and_run.sh ios/scene_test.txt output
+            ```
+        - `NOTE:` **Unlike mentioned in spec, my implementation doesn't expect blank line at the end of object, light and camera description in the input file.**
