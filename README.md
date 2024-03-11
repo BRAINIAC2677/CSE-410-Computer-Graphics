@@ -4,6 +4,8 @@ This repository contains my implementations of the assignments of the course CSE
 
 
 - ## Offline-1 | OpenGL
+    `camera movement` `rolling a ball` `magic cube`
+
     <img src="/assets/magic-cube.png" alt="Magic Cube" width="500"/>
 
     - [Problem Specification](/offline-1|opengl/problem_spec.pdf)
@@ -24,6 +26,8 @@ This repository contains my implementations of the assignments of the course CSE
 
 
 - ## Offline-2 | Rasterization
+    `z-buffering` `scanline algorithm`
+
     <img src="/assets/rasterized.bmp" alt="rasterized" width="500"/>
 
     - [Problem Specification](/offline-2|rasterization/problem_spec.pdf)
@@ -47,6 +51,8 @@ This repository contains my implementations of the assignments of the course CSE
         - [scene_parser.cpp](/offline-2|rasterization/scene_parser.cpp) - parse scene.txt and config.txt files and generate c++ code with libgg library
         
 - ## Offline-3 | Ray Tracing
+    `phong shading` `reflection`
+
     <img src="/assets/ray-traced.bmp" alt="raytraced" width="500"/>
 
     - [Problem Specification](/offline-3|ray-tracing/problem_spec.pdf)
